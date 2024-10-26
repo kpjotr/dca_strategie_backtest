@@ -24,8 +24,8 @@ import yfinance as yf
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = 'goog'
-period = "10y"   # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
-                # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
+period = "10y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+# meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
 company_info = yf.Ticker(ticker)
@@ -33,7 +33,7 @@ company_name = company_info.info['longName']  # A vállalat teljes nevének lek�
 print(f"\nA vizsgált vállalat: {company_name}")
 print(f"A vizsgált időszak: {period}\n-------------------")
 
-# felhasználó megkérdezése a ccsúcsok és völgyek kiíratásáról
+# felhasználó megkérdezése a csúcsok és völgyek kiíratásáról
 details = ""
 while details != "i" and details != "n":
     details = input("Csúcsok és völgyek kiíratása (i/n): ")
@@ -69,18 +69,20 @@ for i in range(len(lows)):
     # rögzítjük az új csúcs értékét
     if high > peak:
         peak = high
-        low_of_peak = low       # rögzítjük az új csúcshoz tartozó napi minimumot
-        date_of_peak = date     # rögzítjük az új csúcs dátumját
+        low_of_peak = low  # rögzítjük az új csúcshoz tartozó napi minimumot
+        date_of_peak = date  # rögzítjük az új csúcs dátumját
         if details == "i":
-            print(f"{i}: on {date} -> Peak     @ {date_of_peak}: {peak:.2f} | low_of_peak: {low_of_peak:.2f}")         # kiíratjuk, amit találtunk (ellenőrzés miatt)
+            print(
+                f"{i}: on {date} -> Peak     @ {date_of_peak}: {peak:.2f} | low_of_peak: {low_of_peak:.2f}")  # kiíratjuk, amit találtunk (ellenőrzés miatt)
 
     # rögzítjük az új völgy értékét
     if low < trough:
         trough = low
-        high_of_trough = high   # rögzítjük az új völgyhöz tartozó napi maximumot
-        date_of_trough = date   # rögzítjük az új völgy dátumját
+        high_of_trough = high  # rögzítjük az új völgyhöz tartozó napi maximumot
+        date_of_trough = date  # rögzítjük az új völgy dátumját
         if details == "i":
-            print(f"{i}: on {date} -> Trough   @ {date_of_trough}: {trough:.2f} | high_of_trough: {high_of_trough:.2f}")    # kiíratjuk, amit találtunk (ellenőrzés miatt)
+            print(
+                f"{i}: on {date} -> Trough   @ {date_of_trough}: {trough:.2f} | high_of_trough: {high_of_trough:.2f}")  # kiíratjuk, amit találtunk (ellenőrzés miatt)
 
     # megvizsgáljuk, hogy létrejött-e új HIGH (napi maximum a legutolsó csúcshoz tartozó minimum érték alá esett)
     if high < low_of_peak:
@@ -88,9 +90,10 @@ for i in range(len(lows)):
         rebounds.append(rebound)
         draw_reb_ratio = rebound / drawdowns[-1]
         draw_reb_ratios.append(draw_reb_ratio)
-        print(f"{i}: on {date} -> New HIGH @ {date_of_peak}: {peak:.2f} | lastLOW: {lastLOW:.2f} | rebound: {rebound:.2f}% | ratio: {draw_reb_ratio:.2f}")
+        print(
+            f"{i}: on {date} -> New HIGH @ {date_of_peak}: {peak:.2f} | lastLOW: {lastLOW:.2f} | rebound: {rebound:.2f}% | ratio: {draw_reb_ratio:.2f}")
         lastHIGH = peak
-        low_of_peak = 0 # ezzel kvázi töröljük az értéket
+        low_of_peak = 0  # ezzel kvázi töröljük az értéket
         trough = low
         high_of_trough = high
         date_of_trough = date
@@ -99,7 +102,8 @@ for i in range(len(lows)):
     if low > high_of_trough:
         drawdown = (lastHIGH - trough) / lastHIGH * 100
         drawdowns.append(drawdown)
-        print(f"{i}: on {date} -> New LOW  @ {date_of_trough}: {trough:.2f} | lastHIGH: {lastHIGH:.2f} | drawdown: {drawdown:.2f}%")
+        print(
+            f"{i}: on {date} -> New LOW  @ {date_of_trough}: {trough:.2f} | lastHIGH: {lastHIGH:.2f} | drawdown: {drawdown:.2f}%")
         lastLOW = trough
         high_of_trough = 999999999  # ezzel kvázi töröljük az értéket
         peak = high
