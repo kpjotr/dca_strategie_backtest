@@ -12,11 +12,9 @@ pjotr957@gmail.com
 
 import yfinance as yf
 
-from PeaksAndTroughs import drawdown
-
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "tsla"
-period = "2y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+period = "max"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
@@ -43,6 +41,7 @@ safety_quant_multiplier = 1
 buyAndHold_quantity = 0
 remain_cash = 0
 startdate = 0
+startclose = 0
 highCapital = 0
 maxdrawdown = 0
 
@@ -61,23 +60,23 @@ for i in range(len(lows)):
 
     # buy and hold referenciához a packett méretének és a maradék cash-nek kiszámítása
     if i == 0:
-        close = closes[i]
+        startclose = closes[i]
         startdate = dates[i].strftime("%Y-%m-%d")
-        buyAndHold_quantity = capital // close
-        remain_cash = capital - capital * comission - buyAndHold_quantity * close
+        buyAndHold_quantity = capital // startclose
+        remain_cash = capital - capital * comission - buyAndHold_quantity * startclose
 
         # ha a jutalék miatt mínuszba futna a maradék cash, itt módosítjuk levefé az eszköz darabszámot, amíg pozitív maradékunk lesz
         while remain_cash < 0:
             buyAndHold_quantity -= 1
-            remain_cash = capital - capital * comission - buyAndHold_quantity * close
-        print(f"Buy and hold stratégia kiindulási adatai.\nStart: {startdate} | Shares: {buyAndHold_quantity} | remain cash: {remain_cash:.2f}")
+            remain_cash = capital - capital * comission - buyAndHold_quantity * startclose
+        print(f"Buy and hold stratégia kiindulási adatai.\nStart: {startdate} | Close price: {startclose:.2f} | Shares: {buyAndHold_quantity} | remain cash: {remain_cash:.2f}")
 
     # drawdown számítása buy and hold alatt
     actualcapital = closes[i] * buyAndHold_quantity + remain_cash
     if actualcapital > highCapital:
         highCapital = actualcapital
     else:
-        drawdown = (highCapital - actualcapital) / highCapital
+        drawdown = (highCapital - actualcapital) / highCapital * 100
         if drawdown > maxdrawdown:
             maxdrawdown = drawdown
 
@@ -88,4 +87,4 @@ for i in range(len(lows)):
         close_capital = remain_cash + buyAndHold_quantity * close - buyAndHold_quantity * close * comission
         buyAndHold_profit = close_capital - capital
         buyAndHold_profit_percent = (buyAndHold_profit / capital) * 100
-        print(f"Buy and hold stratégia eredménye.\nStart: {startdate} | Shares: {buyAndHold_quantity:.0f} | remain cash: {remain_cash:.2f}\nEnd:   {date} | Capital: {close_capital:.2f} | Profit: {buyAndHold_profit:.2f} | Profit %: {buyAndHold_profit_percent:.2f} | Max. drawdown: {maxdrawdown:.2f}")
+        print(f"Buy and hold stratégia eredménye.\nStart: {startdate} | Close price: {startclose:.2f} | Shares: {buyAndHold_quantity:.0f} | remain cash: {remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | Capital: {close_capital:.2f} | Profit: {buyAndHold_profit:.2f} | Profit %: {buyAndHold_profit_percent:.2f} | Max. drawdown: {maxdrawdown:.2f}%")
