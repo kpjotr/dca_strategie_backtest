@@ -55,8 +55,7 @@ highs = data['High'].tolist()
 closes = data['Close'].tolist()
 dates = data.index.tolist()  # A dátumokat az indexből kapjuk
 
-# végig iterálunk az összes napon (low adatok listája adja a napok számát)
-
+# végig iterálunk az összes napon, minden napon elindítjuk a stratégiát (low adatok listája adja a napok számát)
 for i in range(len(lows)):
 
     # buy and hold referenciához a packett méretének és a maradék cash-nek kiszámítása
@@ -89,3 +88,7 @@ for i in range(len(lows)):
         BH_profit = BH_close_capital - capital
         BH_profit_percent = (BH_profit / capital) * 100
         print(f"Buy and hold stratégia eredménye.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | Shares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | Capital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%")
+
+    # DCA stratégia indítása, i-edik naptól végig iterálunk az összes napon
+    for j in range(i, len(lows)):
+        pass
