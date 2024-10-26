@@ -22,7 +22,7 @@ import yfinance as yf
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = 'goog'
-period = "1y"   # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+period = "2y"   # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
                 # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
@@ -30,6 +30,11 @@ company_info = yf.Ticker(ticker)
 company_name = company_info.info['longName']  # A vállalat teljes nevének lekérése
 print(f"\nA vizsgált vállalat: {company_name}")
 print(f"A vizsgált időszak: {period}\n-------------------")
+
+# felhasználó megkérdezése a ccsúcsok és völgyek kiíratásáról
+details = ""
+while details != "i" and details != "n":
+    details = input("Csúcsok és völgyek kiíratása (i/n): ")
 
 # Adatok letöltése a Yahoo Finance-ről (OHLC, date és volume)
 data = yf.download(ticker, period=period)  # Az elmúlt {period} adatait töltjük le
@@ -58,14 +63,16 @@ for i in range(len(lows)):
         peak = high
         low_of_peak = low       # rögzítjük az új csúcshoz tartozó napi minimumot
         date_of_peak = date     # rögzítjük az új csúcs dátumját
-        print(f"{i}: on {date} -> Peak @: {date_of_peak} | {peak:.2f}")         # kiíratjuk, amit találtunk (ellenőrzés miatt)
+        if details == "i":
+            print(f"{i}: on {date} -> Peak @: {date_of_peak} | {peak:.2f}")         # kiíratjuk, amit találtunk (ellenőrzés miatt)
 
     # rögzítjük az új völgy értékét
     if low < trough:
         trough = low
         high_of_trough = high   # rögzítjük az új völgyhöz tartozó napi maximumot
         date_of_trough = date   # rögzítjük az új völgy dátumját
-        print(f"{i}: on {date} -> Trough @ {date_of_trough} | {trough:.2f}")    # kiíratjuk, amit találtunk (ellenőrzés miatt)
+        if details == "i":
+            print(f"{i}: on {date} -> Trough @ {date_of_trough} | {trough:.2f}")    # kiíratjuk, amit találtunk (ellenőrzés miatt)
 
     # megvizsgáljuk, hogy létrejött-e új HIGH (napi maximum a legutolsó csúcshoz tartozó minimum érték alá esett)
     if high < low_of_peak:
