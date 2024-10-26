@@ -24,7 +24,7 @@ import yfinance as yf
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = 'goog'
-period = "1y"   # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+period = "10y"   # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
                 # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
@@ -57,6 +57,8 @@ drawdowns = []
 rebounds = []
 lastHIGH = highs[0]
 lastLOW = lows[0]
+draw_reb_ratio = 0
+draw_reb_ratios = []
 
 # Csúcsok és völgyek számítása
 for i in range(len(lows)):
@@ -84,7 +86,9 @@ for i in range(len(lows)):
     if high < low_of_peak:
         rebound = (peak - lastLOW) / lastLOW * 100
         rebounds.append(rebound)
-        print(f"{i}: on {date} -> New HIGH @ {date_of_peak}: {peak:.2f} | lastLOW: {lastLOW:.2f} | rebound: {rebound:.2f}%")
+        draw_reb_ratio = rebound / drawdowns[-1]
+        draw_reb_ratios.append(draw_reb_ratio)
+        print(f"{i}: on {date} -> New HIGH @ {date_of_peak}: {peak:.2f} | lastLOW: {lastLOW:.2f} | rebound: {rebound:.2f}% | ratio: {draw_reb_ratio:.2f}")
         lastHIGH = peak
         low_of_peak = 0 # ezzel kvázi töröljük az értéket
         trough = low
@@ -101,3 +105,8 @@ for i in range(len(lows)):
         peak = high
         low_of_peak = low
         date_of_peak = date
+
+print("-------------------\n")
+print(f"drawdowns min: {min(drawdowns):.2f}, max: {max(drawdowns):.2f}")
+print(f"rebounds min: {min(rebounds):.2f}, max: {max(rebounds):.2f}")
+print(f"ratios min: {min(draw_reb_ratios):.2f}, max: {max(draw_reb_ratios):.2f}")
