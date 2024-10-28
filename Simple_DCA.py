@@ -16,14 +16,14 @@ import yfinance as yf
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "mcd"
-period = "1y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+period = "1mo"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
 company_info = yf.Ticker(ticker)
 company_name = company_info.info['longName']  # A vállalat teljes nevének lekérése
 print(f"\nA vizsgált vállalat: {company_name}")
-print(f"A vizsgált időszak: {period}\n-------------------")
+print(f"A vizsgált időszak: {period}---------------------------")
 
 # adatok bekérése a felhasználótól
 
@@ -32,13 +32,13 @@ print(f"A vizsgált időszak: {period}\n-------------------")
 capital = 10000                 # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = True          # ha True, akkor azonnal fektet be, nem visszaesés után
+base_order_ASAP = False          # ha True, akkor azonnal fektet be, nem visszaesés után
 initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
-drop_increment_multiplier = 1   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
-safety_order_NR = 4             # safety orderek száma
+drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
+safety_order_NR = 3             # safety orderek száma
 base_quant = 1                  # base order aránya a teljes mennyiségbőlmennyisége
-safety_quant = 1                # kezdő safety order mennyisége
-safety_quant_multiplier = 1     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
+safety_quant = 2                # kezdő safety order mennyisége
+safety_quant_multiplier = 2     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
 TP = 0.1                        # Target price tizedesben megadva (0.1 = 10%)
 
 # egyéb globális változók definiálása
@@ -73,6 +73,7 @@ for i in range(len(lows)):
             BH_quantity -= 1
             BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
         print(f"Buy and hold stratégia kiindulási adatai.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}")
+        print("---------------------------")
 
     # drawdown számítása buy and hold alatt
     BH_actualcapital = closes[i] * BH_quantity + BH_remain_cash
@@ -108,12 +109,13 @@ for i in range(len(lows)):
     for j in range(i, len(lows)):
 
         # scope változóinak értékadása
-        DCA_close = closes(j)
-        DCA_high = highs(j)
-        DCA_low = lows(j)
+        DCA_close = closes[j]
+        DCA_high = highs[j]
+        DCA_low = lows[j]
         averagePrice = 0
-        maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
-        requisite_quant = base_quant + (safety_order_NR ^ safety_quant_multiplier * safety_quant) # stratégia működéséhez szükséges minimum eszköz darabszám számítása
+        maxQuantity = (DCA_capital * (1 - comission)) // DCA_close                                  # maximum vásárolható eszköz mennyiségének kiszámítása
+        requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
+        print(f"Close: {DCA_close} | High: {DCA_high} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
 
         # ellenőrzi, hogy tud-e elegendő eszközt venni, he nem, akkor megáll
         if maxQuantity // requisite_quant < 1:
@@ -122,29 +124,41 @@ for i in range(len(lows)):
 
         # kiszámoljuk mennyi eszközt vehet base orderre és safety orderre
         if maxQuantity // requisite_quant >= 2:
-            base_quant *= maxQuantity // requisite_quant
-            safety_quant *= maxQuantity // requisite_quant
+            base_quant *= maxQuantity // requisite_quant                    # aktualizálja a base mennyiséget
+            safety_quant *= maxQuantity // requisite_quant                  # aktualizálja a safety mennyiséget
+        print(f"Base quant: {base_quant} | Safety quant: {safety_quant}")
 
         # ASAP esetén base order végrehajtása és safety orderek, valamint TP beállítása
         if base_order_ASAP:
             DCA_quantity = base_quant                                       # várárolt eszköz mennyiség beállítása
-            averagePrice = DCA_close                                        # bekerülési ár beállítása
+            averagePrice = DCA_close                                       # bekerülési ár beállítása
+            base_order = DCA_close
+
+            # comission számítása
             if base_quant * DCA_close * comission < comission_min:          # minimum comission alkalmazása
                 DCA_remain_cash -= base_quant * DCA_close - comission_min
             else:                                                           # %-os comission alkalmazása
                 DCA_remain_cash -= base_quant * DCA_close * (1 - comission)
             TP_price = averagePrice * (1 + TP)                              # TP beállítása átlagos bekerülési ár alapján
+            print(f"\nData check: Eszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
-        # ASAP helyett base és safety orderek beállítása
+        # ASAP helyett base order számítása
         else:
             base_order = DCA_high * (1 - initial_drop_percent)
-            safetyOrder = 0
-            safetyOrderQuant = safety_quant
-            for n in range(1, safety_order_NR):
-                initial_drop_percent *= drop_increment_multiplier
-                safetyOrder = DCA_high * (1 - initial_drop_percent)
-                safety_orders.append(safetyOrder)
-                safety_orders_quants.append(safetyOrderQuant)
-                safety_quant *= safety_quant_multiplier
 
-            pass
+        # safety orderek számítása
+        lastOrder = base_order
+        safetyOrderQuant = safety_quant
+        safetyDrop = initial_drop_percent
+        for n in range(safety_order_NR):
+            safetyDrop *= drop_increment_multiplier
+            lastOrder *= (1 - safetyDrop)
+            safety_orders.append(lastOrder)
+            safety_orders_quants.append(safetyOrderQuant)
+            safetyOrderQuant *= safety_quant_multiplier
+
+        print(f"\nCheckpoint: Base order: {base_order:.2f}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
+        go = "n"
+        while go != "i":
+           go = input("Tovább? (i/n): ")
+
