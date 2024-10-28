@@ -7,8 +7,6 @@ created: 2024. 10. 26.
 author: Pjotr 975
 pjotr957@gmail.com
 """
-from platform import system
-
 #
 # a kód funkciója: egyszerű martingale DCA stratégia szimulálása
 
@@ -28,11 +26,11 @@ print(f"A vizsgált időszak: {period}---------------------------")
 # adatok bekérése a felhasználótól
 
 
-# paraméterek értékadása
+# PARAMÉTEREK ÉRTÉKADÁSA
 capital = 10000                 # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = False          # ha True, akkor azonnal fektet be, nem visszaesés után
+base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
 initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
 drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 3             # safety orderek száma
@@ -50,29 +48,31 @@ BH_highCapital = 0
 BH_maxdrawdown = 0
 
 # Adatok letöltése a Yahoo Finance-ről (OHLC, date és volume)
-data = yf.download(ticker, period=period)  # Az elmúlt {period} adatait töltjük le
+data = yf.download(ticker, period=period)  # Az elmúlt {period} adatait tölti le
 
-# Low, High és Date adatok beolvasása listába a letöltött adatokból
+# Low, High ÉS Date ADATOK BEOLVASÁSA LISTÁBA A LETÖLTÖTT ADATOKBÓL
 lows = data['Low'].tolist()
 highs = data['High'].tolist()
 closes = data['Close'].tolist()
 dates = data.index.tolist()  # A dátumokat az indexből kapjuk
 
-# végig iterálunk az összes napon, minden napon elindítjuk a stratégiát (low adatok listája adja a napok számát)
+# VÉGIG ITERÁL AZ ÖSSZES NAPON, MINDEN NAPON ELINDÍTJA A STRATÉGIÁT (low adatok listája adja a napok számát)
 for i in range(len(lows)):
 
-    # buy and hold referenciához a packett méretének és a maradék cash-nek kiszámítása
+    # BUY AND HOLD REFERENCIÁHOZ A PACKETT MÉRETÉNEK ÉS A MARADÉK CASH-NEK KISZÁMÍTÁSA
     if i == 0:
         BH_startclose = closes[i]
         BH_startdate = dates[i].strftime("%Y-%m-%d")
         BH_quantity = capital // BH_startclose
         BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
 
-        # ha a jutalék miatt mínuszba futna a maradék cash, itt módosítjuk levefé az eszköz darabszámot, amíg pozitív maradékunk lesz
+        # ha a jutalék miatt mínuszba futna a maradék cash, itt módosítja lefelé az eszköz darabszámot, amíg pozitív lesz a maradék
         while BH_remain_cash < 0:
             BH_quantity -= 1
             BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
-        print(f"Buy and hold stratégia kiindulási adatai.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}")
+        print(
+            f"Buy and hold stratégia kiindulási adatai.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
+            f"Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}")
         print("---------------------------")
 
     # drawdown számítása buy and hold alatt
@@ -84,16 +84,19 @@ for i in range(len(lows)):
         if BH_drawdown > BH_maxdrawdown:
             BH_maxdrawdown = BH_drawdown
 
-    # buy and hold stratégia zárása
+    # BUY AND HOLD STRATÉGIA ZÁRÁSA
     if i == (len(lows) - 1):
         close = closes[i]
         date = dates[i].strftime("%Y-%m-%d")
         BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
         BH_profit = BH_close_capital - capital
         BH_profit_percent = (BH_profit / capital) * 100
-        print(f"Buy and hold stratégia eredménye.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | Shares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | Capital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%")
+        print(
+            f"Buy and hold stratégia eredménye.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
+            f"Shares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | "
+            f"Capital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%")
 
-    # DCA stratégia indítása
+    # DCA STRATÉGIA INDÍTÁSA
     # DCA scope globális változóinak definiálása
     DCA_capital = capital
     DCA_quantity = 0
@@ -105,7 +108,7 @@ for i in range(len(lows)):
     safety_orders_quants = []
     TP_price = 0
 
-    # i-edik naptól végig iterálunk az összes napon
+    # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a stratégiát)
     for j in range(i, len(lows)):
 
         # scope változóinak értékadása
@@ -113,52 +116,58 @@ for i in range(len(lows)):
         DCA_high = highs[j]
         DCA_low = lows[j]
         averagePrice = 0
-        maxQuantity = (DCA_capital * (1 - comission)) // DCA_close                                  # maximum vásárolható eszköz mennyiségének kiszámítása
-        requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
+        maxQuantity = (DCA_capital * (
+                    1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
+        requisite_quant = base_quant + (
+                    safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
         print(f"Close: {DCA_close} | High: {DCA_high} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
 
         # ellenőrzi, hogy tud-e elegendő eszközt venni, he nem, akkor megáll
         if maxQuantity // requisite_quant < 1:
-            print(f"Összesen {maxQuantity} számú eszközre elegendő a tőke, azonban {requisite_quant} mennyiségre lenne szükség.\nEmeld a tőkét, vagy csökknetsd a szükséges mennyiséget (kevesebb safety order, vagy kisebb növekmény)!")
+            print(
+                f"Összesen {maxQuantity} számú eszközre elegendő a tőke, azonban {requisite_quant} mennyiségre lenne szükség."
+                f"\nEmeld a tőkét, vagy csökknetsd a szükséges mennyiséget (kevesebb safety order, vagy kisebb növekmény)!")
             exit()
 
-        # kiszámoljuk mennyi eszközt vehet base orderre és safety orderre
+        # kiszámolja mennyi eszközt vehet base orderre és safety orderre
         if maxQuantity // requisite_quant >= 2:
-            base_quant *= maxQuantity // requisite_quant                    # aktualizálja a base mennyiséget
-            safety_quant *= maxQuantity // requisite_quant                  # aktualizálja a safety mennyiséget
+            base_quant *= maxQuantity // requisite_quant  # aktualizálja a base mennyiséget
+            safety_quant *= maxQuantity // requisite_quant  # aktualizálja a safety mennyiséget
         print(f"Base quant: {base_quant} | Safety quant: {safety_quant}")
 
-        # ASAP esetén base order végrehajtása és safety orderek, valamint TP beállítása
+        # ASAP esetén base order végrehajtása és TP beállítása
         if base_order_ASAP:
-            DCA_quantity = base_quant                                       # várárolt eszköz mennyiség beállítása
-            averagePrice = DCA_close                                       # bekerülési ár beállítása
+            DCA_quantity = base_quant  # várárolt eszköz mennyiség beállítása
+            averagePrice = DCA_close  # bekerülési ár beállítása
             base_order = DCA_close
 
             # comission számítása
-            if base_quant * DCA_close * comission < comission_min:          # minimum comission alkalmazása
+            if base_quant * DCA_close * comission < comission_min:  # minimum comission alkalmazása
                 DCA_remain_cash -= base_quant * DCA_close - comission_min
-            else:                                                           # %-os comission alkalmazása
+            else:  # %-os comission alkalmazása
                 DCA_remain_cash -= base_quant * DCA_close * (1 - comission)
-            TP_price = averagePrice * (1 + TP)                              # TP beállítása átlagos bekerülési ár alapján
-            print(f"\nData check: Eszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+            TP_price = averagePrice * (1 + TP)  # TP beállítása átlagos bekerülési ár alapján
+            print(
+                f"\nData check: Eszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
         # ASAP helyett base order számítása
         else:
             base_order = DCA_high * (1 - initial_drop_percent)
 
-        # safety orderek számítása
-        lastOrder = base_order
-        safetyOrderQuant = safety_quant
-        safetyDrop = initial_drop_percent
-        for n in range(safety_order_NR):
-            safetyDrop *= drop_increment_multiplier
-            lastOrder *= (1 - safetyDrop)
-            safety_orders.append(lastOrder)
-            safety_orders_quants.append(safetyOrderQuant)
-            safetyOrderQuant *= safety_quant_multiplier
+        # SAFETY ORDEREK SZÁMÍTÁSA
+        lastOrder = base_order              # globális változók értékeinek átadása a scope-ba, hogy az eredeti ne változzon
+        safetyOrderQuant = safety_quant     # -
+        safetyDrop = initial_drop_percent   # -
 
-        print(f"\nCheckpoint: Base order: {base_order:.2f}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
+        for n in range(safety_order_NR):    # for loop a safety orderek feltöltéséhez
+            safetyDrop *= drop_increment_multiplier         # safety order távolságok növelése
+            lastOrder *= (1 - safetyDrop)                   # előző order árának módosítása
+            safety_orders.append(lastOrder)                 # safety orderek árait tartalmazó lista feltöltése
+            safety_orders_quants.append(safetyOrderQuant)   # safety orderek mennyiségeit tartalmazó lista feltöltése
+            safetyOrderQuant *= safety_quant_multiplier     # előző order mennyiségének módosítása
+
+        print(
+            f"\nCheckpoint: Base order: {base_order:.2f}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
         go = "n"
         while go != "i":
-           go = input("Tovább? (i/n): ")
-
+            go = input("Tovább? (i/n): ")
