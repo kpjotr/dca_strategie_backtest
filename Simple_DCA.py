@@ -7,6 +7,8 @@ created: 2024. 10. 26.
 author: Pjotr 975
 pjotr957@gmail.com
 """
+from platform import system
+
 #
 # a kód funkciója: egyszerű martingale DCA stratégia szimulálása
 
@@ -27,16 +29,17 @@ print(f"A vizsgált időszak: {period}\n-------------------")
 
 
 # paraméterek értékadása
-capital = 10000
-comission_min = 1
-comission = 0.001
-base_order_ASAP = True
-initial_drop_percent = 5
-drop_increment_multiplier = 1
-safety_order_NR = 5
-base_quant = 1
-safety_quant = 1
-safety_quant_multiplier = 1 # kizárólag egész szám lehet!
+capital = 10000                 # induló tőke
+comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
+comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
+base_order_ASAP = True          # ha True, akkor azonnal fektet be, nem visszaesés után
+initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
+drop_increment_multiplier = 1   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
+safety_order_NR = 4             # safety orderek száma
+base_quant = 1                  # base order aránya a teljes mennyiségbőlmennyisége
+safety_quant = 1                # kezdő safety order mennyisége
+safety_quant_multiplier = 1     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
+TP = 0.1                        # Target price tizedesben megadva (0.1 = 10%)
 
 # egyéb globális változók definiálása
 BH_quantity = 0
@@ -89,6 +92,59 @@ for i in range(len(lows)):
         BH_profit_percent = (BH_profit / capital) * 100
         print(f"Buy and hold stratégia eredménye.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | Shares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | Capital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%")
 
-    # DCA stratégia indítása, i-edik naptól végig iterálunk az összes napon
+    # DCA stratégia indítása
+    # DCA scope globális változóinak definiálása
+    DCA_capital = capital
+    DCA_quantity = 0
+    DCA_remain_cash = capital
+    DCA_highCapital = 0
+    DCA_maxdrawdown = 0
+    base_order = 0
+    safety_orders = []
+    safety_orders_quants = []
+    TP_price = 0
+
+    # i-edik naptól végig iterálunk az összes napon
     for j in range(i, len(lows)):
-        pass
+
+        # scope változóinak értékadása
+        DCA_close = closes(j)
+        DCA_high = highs(j)
+        DCA_low = lows(j)
+        averagePrice = 0
+        maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
+        requisite_quant = base_quant + (safety_order_NR ^ safety_quant_multiplier * safety_quant) # stratégia működéséhez szükséges minimum eszköz darabszám számítása
+
+        # ellenőrzi, hogy tud-e elegendő eszközt venni, he nem, akkor megáll
+        if maxQuantity // requisite_quant < 1:
+            print(f"Összesen {maxQuantity} számú eszközre elegendő a tőke, azonban {requisite_quant} mennyiségre lenne szükség.\nEmeld a tőkét, vagy csökknetsd a szükséges mennyiséget (kevesebb safety order, vagy kisebb növekmény)!")
+            exit()
+
+        # kiszámoljuk mennyi eszközt vehet base orderre és safety orderre
+        if maxQuantity // requisite_quant >= 2:
+            base_quant *= maxQuantity // requisite_quant
+            safety_quant *= maxQuantity // requisite_quant
+
+        # ASAP esetén base order végrehajtása és safety orderek, valamint TP beállítása
+        if base_order_ASAP:
+            DCA_quantity = base_quant                                       # várárolt eszköz mennyiség beállítása
+            averagePrice = DCA_close                                        # bekerülési ár beállítása
+            if base_quant * DCA_close * comission < comission_min:          # minimum comission alkalmazása
+                DCA_remain_cash -= base_quant * DCA_close - comission_min
+            else:                                                           # %-os comission alkalmazása
+                DCA_remain_cash -= base_quant * DCA_close * (1 - comission)
+            TP_price = averagePrice * (1 + TP)                              # TP beállítása átlagos bekerülési ár alapján
+
+        # ASAP helyett base és safety orderek beállítása
+        else:
+            base_order = DCA_high * (1 - initial_drop_percent)
+            safetyOrder = 0
+            safetyOrderQuant = safety_quant
+            for n in range(1, safety_order_NR):
+                initial_drop_percent *= drop_increment_multiplier
+                safetyOrder = DCA_high * (1 - initial_drop_percent)
+                safety_orders.append(safetyOrder)
+                safety_orders_quants.append(safetyOrderQuant)
+                safety_quant *= safety_quant_multiplier
+
+            pass
