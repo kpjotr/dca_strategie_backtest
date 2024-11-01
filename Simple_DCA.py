@@ -111,14 +111,16 @@ for i in range(len(lows)):
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a stratégiát)
     for j in range(i, len(lows)):
 
-        if base_order > 0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja limitre)
+        # scope változók értékadása
+        DCA_close = closes[j]
+        DCA_high = highs[j]
+        DCA_low = lows[j]
+        averagePrice = 0
+
+        if base_order > 0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja az árát)
 
             # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
-            # scope változóinak értékadása
-            DCA_close = closes[j]
-            DCA_high = highs[j]
-            DCA_low = lows[j]
-            averagePrice = 0
+
             maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
             requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
             print(f"Close: {DCA_close} | High: {DCA_high} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
@@ -172,5 +174,22 @@ for i in range(len(lows)):
             go = "n"
             while go != "i":
                 go = input("Tovább? (i/n): ")
+            continue # itt ignorálja a for loop további részeit és folytatja a következő nappal
+
+        # TP teljesülésének ellenőrzése
+        # noinspection PyRedeclaration
+        DCA_closePrice = 0
+        if TP_price > 0:
+            if TP_price < DCA_high:     # ha a napi maximum > TP, akkor bitos, hogy a TP kiütve
+                if TP_price > DCA_low:  # ha a TP a napi low és high között van, akkor a pozi záróár = TP
+                    DCA_closePrice = TP_price
+                else:                   # egyéb esetben a pozi záróár = napi minimummal (low)
+                    DCA_closePrice = DCA_low
+            if DCA_closePrice > 0:      # pozi záróárból frissíti a DCA capitalt
+                DCA_capital = DCA_quantity * DCA_closePrice + DCA_remain_cash
+                DCA_quantity = 0
+                DCA_remain_cash = 0
+                print(f"---------------------------\nTP teljesült @ {DCA_closePrice} áron, {dates[j]} napon.\nA tőke összege: {DCA_capital}") # kiírja az eredményt
+
 
         pass
