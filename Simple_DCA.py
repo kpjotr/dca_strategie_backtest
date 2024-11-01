@@ -10,7 +10,8 @@ pjotr957@gmail.com
 #
 # a kód funkciója: egyszerű martingale DCA stratégia szimulálása
 
-import yfinance as yf
+import yfinance as yf   # yahoo finance-el biztosít kapcsolatot adatletöltés céljából
+import pandas as pd     # a yfinance által letöltött adatok kezeléséhez kell
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "mcd"
@@ -54,7 +55,7 @@ data = yf.download(ticker, period=period)  # Az elmúlt {period} adatait tölti 
 lows = data['Low'].tolist()
 highs = data['High'].tolist()
 closes = data['Close'].tolist()
-dates = data.index.tolist()  # A dátumokat az indexből kapjuk
+dates = [d.date() for d in pd.to_datetime(data.index)]  # A dátumokat az indexből kapjuk, kiolvasásuk időpont nélkül
 
 # VÉGIG ITERÁL AZ ÖSSZES NAPON, MINDEN NAPON ELINDÍTJA A STRATÉGIÁT (low adatok listája adja a napok számát)
 for i in range(len(lows)):
@@ -62,7 +63,7 @@ for i in range(len(lows)):
     # BUY AND HOLD REFERENCIÁHOZ A PACKETT MÉRETÉNEK ÉS A MARADÉK CASH-NEK KISZÁMÍTÁSA
     if i == 0:
         BH_startclose = closes[i]
-        BH_startdate = dates[i].strftime("%Y-%m-%d")
+        BH_startdate = dates[i]
         BH_quantity = capital // BH_startclose
         BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
 
