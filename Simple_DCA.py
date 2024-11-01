@@ -116,10 +116,8 @@ for i in range(len(lows)):
         DCA_high = highs[j]
         DCA_low = lows[j]
         averagePrice = 0
-        maxQuantity = (DCA_capital * (
-                    1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
-        requisite_quant = base_quant + (
-                    safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
+        maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
+        requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
         print(f"Close: {DCA_close} | High: {DCA_high} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
 
         # ellenőrzi, hogy tud-e elegendő eszközt venni, he nem, akkor megáll
@@ -129,7 +127,7 @@ for i in range(len(lows)):
                 f"\nEmeld a tőkét, vagy csökknetsd a szükséges mennyiséget (kevesebb safety order, vagy kisebb növekmény)!")
             exit()
 
-        # kiszámolja mennyi eszközt vehet base orderre és safety orderre
+        # base order és safety order darabszámok beállítása (maxQuantity elsoztása)
         if maxQuantity // requisite_quant >= 2:
             base_quant *= maxQuantity // requisite_quant  # aktualizálja a base mennyiséget
             safety_quant *= maxQuantity // requisite_quant  # aktualizálja a safety mennyiséget
@@ -137,9 +135,9 @@ for i in range(len(lows)):
 
         # ASAP esetén base order végrehajtása és TP beállítása
         if base_order_ASAP:
-            DCA_quantity = base_quant  # várárolt eszköz mennyiség beállítása
-            averagePrice = DCA_close  # bekerülési ár beállítása
-            base_order = DCA_close
+            DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
+            averagePrice = DCA_close    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+            base_order = DCA_close      # base order árának beállítása
 
             # comission számítása
             if base_quant * DCA_close * comission < comission_min:  # minimum comission alkalmazása
@@ -155,9 +153,9 @@ for i in range(len(lows)):
             base_order = DCA_high * (1 - initial_drop_percent)
 
         # SAFETY ORDEREK SZÁMÍTÁSA
-        lastOrder = base_order              # globális változók értékeinek átadása a scope-ba, hogy az eredeti ne változzon
-        safetyOrderQuant = safety_quant     # -
-        safetyDrop = initial_drop_percent   # -
+        lastOrder = base_order              # globális változók értékeinek átadása a scope-ba, hogy a globális ne változzon
+        safetyOrderQuant = safety_quant     # -"-
+        safetyDrop = initial_drop_percent   # -"-
 
         for n in range(safety_order_NR):    # for loop a safety orderek feltöltéséhez
             safetyDrop *= drop_increment_multiplier         # safety order távolságok növelése
