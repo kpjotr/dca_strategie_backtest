@@ -7,6 +7,8 @@ created: 2024. 10. 26.
 author: Pjotr 975
 pjotr957@gmail.com
 """
+from time import sleep
+
 #
 # a kód funkciója: egyszerű martingale DCA stratégia szimulálása
 
@@ -28,10 +30,10 @@ print(f"A vizsgált időszak: {period}---------------------------")
 
 
 # PARAMÉTEREK ÉRTÉKADÁSA
-capital = 10000                 # induló tőke
+capital = 10000.0               # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
+base_order_ASAP = True         # ha True, akkor azonnal fektet be, nem visszaesés után
 initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
 drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 3             # safety orderek száma
@@ -42,11 +44,11 @@ TP = 0.1                        # Target price tizedesben megadva (0.1 = 10%)
 
 # egyéb globális változók definiálása
 BH_quantity = 0
-BH_remain_cash = 0
+BH_remain_cash = 0.0
 BH_startdate = 0
-BH_startclose = 0
-BH_highCapital = 0
-BH_maxdrawdown = 0
+BH_startclose = 0.0
+BH_highCapital = 0.0
+BH_maxdrawdown = 0.0
 
 # Adatok letöltése a Yahoo Finance-ről (OHLC, date és volume)
 data = yf.download(ticker, period=period)  # Az elmúlt {period} adatait tölti le
@@ -59,7 +61,7 @@ dates = [d.date() for d in pd.to_datetime(data.index)]  # A dátumokat az indexb
 
 # VÉGIG ITERÁL AZ ÖSSZES NAPON, MINDEN NAPON ELINDÍTJA A STRATÉGIÁT (low adatok listája adja a napok számát)
 for i in range(len(lows)):
-
+    print(f"Külső ciklus: {i}")
     # BUY AND HOLD REFERENCIÁHOZ A PACKETT MÉRETÉNEK ÉS A MARADÉK CASH-NEK KISZÁMÍTÁSA
     if i == 0:
         BH_startclose = closes[i]
@@ -68,7 +70,7 @@ for i in range(len(lows)):
         BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
 
         # ha a jutalék miatt mínuszba futna a maradék cash, itt módosítja lefelé az eszköz darabszámot, amíg pozitív lesz a maradék
-        while BH_remain_cash < 0:
+        while BH_remain_cash < 0.0:
             BH_quantity -= 1
             BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
         print(
@@ -88,7 +90,7 @@ for i in range(len(lows)):
     # BUY AND HOLD STRATÉGIA ZÁRÁSA
     if i == (len(lows) - 1):
         close = closes[i]
-        date = dates[i].strftime("%Y-%m-%d")
+        date = dates[i]
         BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
         BH_profit = BH_close_capital - capital
         BH_profit_percent = (BH_profit / capital) * 100
@@ -102,29 +104,31 @@ for i in range(len(lows)):
     DCA_capital = capital
     DCA_quantity = 0
     DCA_remain_cash = capital
-    DCA_highCapital = 0
-    DCA_maxdrawdown = 0
-    base_order = 0
+    DCA_highCapital = 0.0
+    DCA_maxdrawdown = 0.0
+    base_order = 0.0
     safety_orders = []
     safety_orders_quants = []
-    TP_price = 0
+    TP_price = 0.0
 
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a stratégiát)
     for j in range(i, len(lows)):
+        print(f"Belső ciklus: {j}")
 
         # scope változók értékadása
         DCA_close = closes[j]
         DCA_high = highs[j]
         DCA_low = lows[j]
-        averagePrice = 0
+        averagePrice = 0.0
 
-        if base_order > 0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja az árát)
+        print(f"BASE ORDER: {base_order}, {type(base_order)}")
+        if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja az árát)
 
             # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
 
             maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
             requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
-            print(f"Close: {DCA_close} | High: {DCA_high} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
+            print(f"Close: {DCA_close:.2f} | High: {DCA_high:.2f} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
 
             # ellenőrzi, hogy tud-e elegendő eszközt venni, he nem, akkor megáll
             if maxQuantity // requisite_quant < 1:
@@ -146,13 +150,13 @@ for i in range(len(lows)):
                 base_order = DCA_close      # base order árának beállítása
 
                 # comission számítása
-                if base_quant * DCA_close * comission < comission_min:  # minimum comission alkalmazása
-                    DCA_remain_cash -= base_quant * DCA_close - comission_min
-                else:  # %-os comission alkalmazása
-                    DCA_remain_cash -= base_quant * DCA_close * (1 - comission)
+                if base_quant * DCA_close * comission < comission_min:
+                    DCA_remain_cash -= base_quant * DCA_close - comission_min       # minimum comission alkalmazása
+                else:
+                    DCA_remain_cash -= base_quant * DCA_close * (1 - comission)     # %-os comission alkalmazása
                 TP_price = averagePrice * (1 + TP)  # TP beállítása átlagos bekerülési ár alapján
                 print(
-                    f"\nData check: Eszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+                    f"\nData check: Eszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
             # ASAP helyett base order számítása
             else:
@@ -166,7 +170,7 @@ for i in range(len(lows)):
             for n in range(safety_order_NR):    # for loop a safety orderek feltöltéséhez
                 safetyDrop *= drop_increment_multiplier         # safety order távolságok növelése
                 lastOrder *= (1 - safetyDrop)                   # előző order árának módosítása
-                safety_orders.append(lastOrder)                 # safety orderek árait tartalmazó lista feltöltése
+                safety_orders.append(round(lastOrder, 2))                 # safety orderek árait tartalmazó lista feltöltése
                 safety_orders_quants.append(safetyOrderQuant)   # safety orderek mennyiségeit tartalmazó lista feltöltése
                 safetyOrderQuant *= safety_quant_multiplier     # előző order mennyiségének módosítása
 
@@ -174,13 +178,15 @@ for i in range(len(lows)):
                 f"\nCheckpoint: Base order: {base_order:.2f}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
             go = "n"
             while go != "i":
+                print(f"BASE ORDER: {base_order}, {type(base_order)}")
                 go = input("Tovább? (i/n): ")
             continue # itt ignorálja a for loop további részeit és folytatja a következő nappal
 
         # TP teljesülésének ellenőrzése
         # noinspection PyRedeclaration
-        DCA_closePrice = 0
+        DCA_closePrice = 0.0
         if TP_price > 0:
+            print(f"TP: {TP_price}, High: {DCA_high}")
             if TP_price < DCA_high:     # ha a napi maximum > TP, akkor bitos, hogy a TP kiütve
                 if TP_price > DCA_low:  # ha a TP a napi low és high között van, akkor a pozi záróár = TP
                     DCA_closePrice = TP_price
@@ -189,8 +195,10 @@ for i in range(len(lows)):
             if DCA_closePrice > 0:      # pozi záróárból frissíti a DCA capitalt
                 DCA_capital = DCA_quantity * DCA_closePrice + DCA_remain_cash
                 DCA_quantity = 0
-                DCA_remain_cash = 0
-                print(f"---------------------------\nTP teljesült @ {DCA_closePrice} áron, {dates[j]} napon.\nA tőke összege: {DCA_capital}") # kiírja az eredményt
-
-
+                DCA_remain_cash = 0.0
+                base_order = 0.0          # nullázza a base_order-t, hiszen már nincs pozi, kell új base order
+                print(f"---------------------------\nTP teljesült @ {DCA_closePrice:.2f} áron, {dates[j]} napon.\nA tőke összege: {DCA_capital:.2f}") # kiírja az eredményt
+            pass
         pass
+    pass
+pass
