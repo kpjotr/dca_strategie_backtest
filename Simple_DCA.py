@@ -14,6 +14,7 @@ from time import sleep
 
 import yfinance as yf   # yahoo finance-el biztosít kapcsolatot adatletöltés céljából
 import pandas as pd     # a yfinance által letöltött adatok kezeléséhez kell
+import sys
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "mcd"
@@ -102,7 +103,7 @@ for i in range(len(lows)):
 
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a stratégiát)
     for j in range(i, len(lows)):
-        print(f"DCA napja: @ {dates[j]} | nr: {j+1}\n")
+        print(f"\nDCA napja: @ {dates[j]} | nr: {j+1}")
 
         # scope változók értékadása
         DCA_close = closes[j]
@@ -168,7 +169,8 @@ for i in range(len(lows)):
                 f"\nSAFETY ORDERS set @ {dates[j]}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
             go = "n"
             while go != "i":
-                print(f"BASE ORDER: {base_order}, {type(base_order)}")
+                # print(f"BASE ORDER: {base_order}, {type(base_order)}")
+                # print("Standard input:", sys.stdin)
                 go = input("Tovább? (i/n): ")
             continue # itt ignorálja a for loop további részeit és folytatja a következő nappal
 
@@ -176,7 +178,7 @@ for i in range(len(lows)):
         # noinspection PyRedeclaration
         DCA_closePrice = 0.0
         if TP_price > 0:
-            print(f"TP ELLENŐRZÉSE\nTP: {TP_price}, High: {DCA_high}")
+            print(f"TP ELLENŐRZÉSE\nTP: {TP_price:.2f}, High price: {DCA_high:.2f}")
             if TP_price < DCA_high:     # ha a napi maximum > TP, akkor bitos, hogy a TP kiütve
                 if TP_price > DCA_low:  # ha a TP a napi low és high között van, akkor a pozi záróár = TP
                     DCA_closePrice = TP_price
