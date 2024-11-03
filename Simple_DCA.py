@@ -52,8 +52,8 @@ initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
 base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
-initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
-drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
+initial_drop_percent = 0.03     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
+drop_increment_multiplier = 1   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 3             # safety orderek száma
 initial_base_quant = 1          # base order aránya a teljes mennyiségből
 initial_safety_quant = 2        # kezdő safety order aránya a teljes mennyiségből
@@ -119,6 +119,7 @@ for i in range(len(lows)):
     base_quant = 0
     safety_orders = []
     safety_orders_quants = []
+    actual_safety = 0
     TP_price = 0.0
 
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a DCA stratégiát)
@@ -155,6 +156,7 @@ for i in range(len(lows)):
             # globális változók értékeinek átadása a scope-nak, illetve nullázása
             base_quant = initial_base_quant
             safety_quant = initial_safety_quant
+            actual_safety = 0
             safety_orders = []
             safety_orders_quants = []
 
@@ -240,6 +242,28 @@ for i in range(len(lows)):
                     DCA_peak = DCA_high
                     base_order = round(DCA_high * (1 - initial_drop_percent), 2)
                     print(f"Limit price: {base_order}")
+
+        # SAFETY ORDER-ek teljesülésének ellenőrzése
+        if TP_price > 0 & actual_safety <= len(safety_orders)-1:    # akkor vizsgáljuk, ha van TP és még nem lőtte el az összes safety ordert
+            if DCA_low < safety_orders[actual_safety] < DCA_high:
+                order_price = safety_orders[actual_safety]
+                order_quant = safety_orders_quants[actual_safety]
+                DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)
+                DCA_quantity += safety_orders_quants[actual_safety]   # várárolt eszköz mennyiség beállítása
+                averagePrice = (averagePrice + (safety_orders_quants[actual_safety] * safety_orders[actual_safety])) / DCA_quantity   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                TP_price = averagePrice * (1 + TP)
+                actual_safety += 1
+                print(f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
+            elif DCA_high < safety_orders[actual_safety]:
+                order_price = DCA_high
+                order_quant = safety_orders_quants[actual_safety]
+                DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)
+                DCA_quantity += safety_orders_quants[actual_safety]   # várárolt eszköz mennyiség beállítása
+                averagePrice = (averagePrice + (safety_orders_quants[actual_safety] * safety_orders[actual_safety])) / DCA_quantity   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                TP_price = averagePrice * (1 + TP)
+                actual_safety += 1
+                print(f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
+
         # STRATÉGIA ZÁRÁSA
         if j == (len(lows) - 1):
             close = closes[j]
