@@ -193,14 +193,13 @@ for i in range(len(lows)):
             pass
         pass
 
-        # BUY AND HOLD STRATÉGIA ZÁRÁSA
+        # STRATÉGIA ZÁRÁSA
         if j == (len(lows) - 1):
             close = closes[j]
             date = dates[j]
+            DCA_capital = DCA_quantity * close + DCA_remain_cash
+            print(f"\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f} | Capital: {DCA_capital:.2f}")
             BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
             BH_profit = BH_close_capital - capital
             BH_profit_percent = (BH_profit / capital) * 100
-            print(
-                f"\nBuy and hold stratégia eredménye.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
-                f"Shares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | "
-                f"Capital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\n---------------------------\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...")
+            print(f"\nBuy and hold stratégia eredménye.\nShares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f} | Close price: {close:.2f}\nCapital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\n---------------------------\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...")
