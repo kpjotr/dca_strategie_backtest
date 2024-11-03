@@ -16,6 +16,25 @@ import yfinance as yf   # yahoo finance-el biztosít kapcsolatot adatletöltés 
 import pandas as pd     # a yfinance által letöltött adatok kezeléséhez kell
 import sys
 
+
+# FÜGGVÉNYEK DEFINIÁLÁSA
+
+# BUY
+def buy(_cash, _quant, _price):
+    if _quant * _price * comission < comission_min:
+        cash = _cash - _price * _quant - comission_min      # maradék cash minimum comissionnal számolva
+    else:
+        cash = _cash - _quant * _price * (1 + comission)    # maradék cash %-os comissionnal számolva
+    return cash                                             # visszatérési érték a maradék cash
+
+# SELL
+def sell(_cash, _quant, _price):
+    if _quant * _price * comission < comission_min:
+        new_capital = _cash + _price * _quant - comission_min       # eladásból capital számítása minimum comission levonásával
+    else:
+        new_capital = _cash + _quant * _price * (1 - comission)     # eladásból capital számítása %-os comission levonásával
+    return new_capital                                              # visszatérési érték az új tőke
+
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "mcd"
 period = "3mo"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
@@ -26,8 +45,6 @@ company_info = yf.Ticker(ticker)
 company_name = company_info.info['longName']  # A vállalat teljes nevének lekérése
 print(f"\nA vizsgált vállalat: {company_name}")
 print(f"A vizsgált időszak: {period}\n---------------------------")
-
-# adatok bekérése a felhasználótól
 
 
 # PARAMÉTEREK ÉRTÉKADÁSA
@@ -68,12 +85,12 @@ for i in range(len(lows)):
         BH_startclose = closes[i]
         BH_startdate = dates[i]
         BH_quantity = initial_capital // BH_startclose
-        BH_remain_cash = initial_capital - initial_capital * comission - BH_quantity * BH_startclose
+        BH_remain_cash = remaincash_calc(initial_capital, BH_quantity, BH_startclose)
 
         # ha a jutalék miatt mínuszba futna a maradék cash, itt módosítja lefelé az eszköz darabszámot, amíg pozitív lesz a maradék
         while BH_remain_cash < 0.0:
             BH_quantity -= 1
-            BH_remain_cash = initial_capital - initial_capital * comission - BH_quantity * BH_startclose
+            BH_remain_cash = remaincash_calc(initial_capital, BH_quantity, BH_startclose)
         print(
             f"Buy and hold stratégia kiindulási adatai.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
             f"Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}\n")
@@ -112,7 +129,7 @@ for i in range(len(lows)):
         averagePrice = 0.0
 
         # print(f"BASE ORDER: {base_order}, {type(base_order)}")
-        if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja az árát)
+        if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja limitre)
 
             # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
 
@@ -145,12 +162,9 @@ for i in range(len(lows)):
                 averagePrice = DCA_close    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 base_order = round(DCA_close, 2)      # base order árának beállítása
 
-                # comission számítása
-                if base_quant * DCA_close * comission < comission_min:
-                    DCA_remain_cash = DCA_capital - base_quant * DCA_close - comission_min       # minimum comission alkalmazása
-                else:
-                    DCA_remain_cash = DCA_capital - base_quant * DCA_close * (1 - comission)     # %-os comission alkalmazása
-                TP_price = averagePrice * (1 + TP)  # TP beállítása átlagos bekerülési ár alapján
+                # Vétel
+                DCA_remain_cash = buy(DCA_capital, DCA_quantity, DCA_close) # Vétel és a comission levonása
+                TP_price = averagePrice * (1 + TP)                          # TP beállítása átlagos bekerülési ár alapján
                 print(
                     f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
@@ -206,11 +220,11 @@ for i in range(len(lows)):
         if j == (len(lows) - 1):
             close = closes[j]
             date = dates[j]
-            DCA_capital = DCA_quantity * close + DCA_remain_cash
+            DCA_capital = sell(DCA_remain_cash, DCA_quantity, close)
             DCA_profit = DCA_capital - initial_capital
             DCA_profit_percent = (DCA_profit / initial_capital) * 100
             print(f"\n-------------------------------------------------------------------------------------\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
-            BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
+            BH_close_capital = sell(BH_remain_cash, BH_quantity, close)
             BH_profit = BH_close_capital - initial_capital
             BH_profit_percent = (BH_profit / initial_capital) * 100
             print(f"\nBuy and hold stratégia eredménye.\nShares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f} | Close price: {close:.2f}\nCapital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...\n-------------------------------------------------------------------------------------")
