@@ -18,7 +18,7 @@ import sys
 
 
 # FÜGGVÉNYEK DEFINIÁLÁSA
-
+# ----------------------
 # BUY
 def buy(_cash, _quant, _price):
     if _quant * _price * comission < comission_min:
@@ -108,7 +108,7 @@ for i in range(len(lows)):
 
     # DCA STRATÉGIA INDÍTÁSA
     print(f"\nDCA stratégia indul @ {dates[i]} | nr: {i+1}\n")
-    # DCA scope globális változóinak definiálása
+    # DCA scope változóinak definiálása
     DCA_capital = initial_capital
     DCA_quantity = 0
     DCA_remain_cash = 0.0
@@ -148,7 +148,9 @@ for i in range(len(lows)):
                 base_order = 0.0        # -"-
                 base_quant = 0          # -"-
                 TP_price = 0.0          # -"-
-                print(f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
+                print(
+                    f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}"
+                    f"\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
 
         # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
         if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja limitre)
@@ -172,23 +174,24 @@ for i in range(len(lows)):
                     f"\nEmeld a tőkét, vagy csökknetsd a szükséges mennyiséget (kevesebb safety order, vagy kisebb növekmény)!")
                 exit()
 
-            # base order és safety order darabszámok beállítása (maxQuantity elsoztása)
+            # base order és safety order darabszámok beállítása (maxQuantity szétosztása)
             if maxQuantity // requisite_quant >= 2:
-                base_quant *= maxQuantity // requisite_quant  # aktualizálja a base mennyiséget
+                base_quant *= maxQuantity // requisite_quant    # aktualizálja a base mennyiséget
                 safety_quant *= maxQuantity // requisite_quant  # aktualizálja a safety mennyiséget
             print(f"Base quant: {base_quant} | Safety quant: {safety_quant}")
 
             # ASAP esetén base order végrehajtása és TP beállítása
             if base_order_ASAP:
-                DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
-                averagePrice = DCA_close    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
-                base_order = round(DCA_close, 2)      # base order árának beállítása
+                DCA_quantity = base_quant           # várárolt eszköz mennyiség beállítása
+                averagePrice = DCA_close            # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                base_order = round(DCA_close, 2)    # base order árának beállítása
 
                 # Vétel
                 DCA_remain_cash = buy(DCA_capital, DCA_quantity, DCA_close) # Vétel és a comission levonása
                 TP_price = averagePrice * (1 + TP)                          # TP beállítása átlagos bekerülési ár alapján
                 print(
-                    f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+                    f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f}"
+                    f"| TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
             # ASAP helyett base order limit beállítása
             else:
@@ -207,8 +210,7 @@ for i in range(len(lows)):
                 safety_orders_quants.append(safetyOrderQuant)   # safety orderek mennyiségeit tartalmazó lista feltöltése
                 safetyOrderQuant *= safety_quant_multiplier     # előző order mennyiségének módosítása
 
-            print(
-                f"\nSAFETY ORDERS set @ {dates[j]}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
+            print(f"\nSAFETY ORDERS set @ {dates[j]}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
 
             # MEGSZAKÍTÁS -----------------
             # go = "n"
@@ -218,42 +220,44 @@ for i in range(len(lows)):
             #     go = input("Tovább? (i/n): ")
             # MEGSZAKÍTÁS -----------------
 
-            continue # itt ignorálja a for loop további részeit és folytatja a következő nappal
+            continue # itt ignorálja a DCA loop további részeit és folytatja a következő nappal
 
         # BASE ORDER limit teljesülésének ellenőrzése
         if TP_price == 0:
-            if DCA_low < base_order < DCA_high:
-                DCA_remain_cash = buy(DCA_capital, base_quant, base_order)
-                DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
-                averagePrice = base_order    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
-                TP_price = averagePrice * (1 + TP)
+            if DCA_low < base_order < DCA_high: # ha a base_order a Low és High értékek között van
+                DCA_remain_cash = buy(DCA_capital, base_quant, base_order)  # maradék cash
+                DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
+                averagePrice = base_order                                   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                TP_price = averagePrice * (1 + TP)                          # TP beállítása
+                print(f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+            elif DCA_high < base_order:         # ha a base_order a Low értéke fölé kerül (beszakadt az ár)
+                DCA_remain_cash = buy(DCA_capital, base_quant, DCA_high)    # maradék cash
+                DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
+                averagePrice = DCA_high                                     # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                TP_price = averagePrice * (1 + TP)                          # TP beállítása
                 print(
-                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
-            elif DCA_high < base_order:
-                DCA_remain_cash = buy(DCA_capital, base_quant, DCA_high)
-                DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
-                averagePrice = DCA_high    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
-                TP_price = averagePrice * (1 + TP)
-                print(
-                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f}"
+                    f"| Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
             else:
-                if DCA_high > DCA_peak:     # árcsúcs frissítése
+                if DCA_high > DCA_peak:
                     print(f"\nBASE ODER limit modified @ {dates[j]} | Peak: {DCA_peak} | High: {DCA_high}")
-                    DCA_peak = DCA_high
-                    base_order = round(DCA_high * (1 - initial_drop_percent), 2)
+                    DCA_peak = DCA_high                                             # árcsúcs frissítése
+                    base_order = round(DCA_high * (1 - initial_drop_percent), 2)    # base order aktualizálása (emelése a csúcs szerint)
                     print(f"Limit price: {base_order}")
 
         # SAFETY ORDER-ek teljesülésének ellenőrzése
         if TP_price > 0 & actual_safety <= len(safety_orders)-1:    # akkor vizsgáljuk, ha van TP és még nem lőtte el az összes safety ordert
-            if DCA_low < safety_orders[actual_safety] < DCA_high:
-                order_price = safety_orders[actual_safety]
-                order_quant = safety_orders_quants[actual_safety]
-                DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)
-                DCA_quantity += safety_orders_quants[actual_safety]   # várárolt eszköz mennyiség beállítása
+            if DCA_low < safety_orders[actual_safety] < DCA_high:   # ha az aktuálisan vizsgált safety_order a Low és High értékek között van
+                order_price = safety_orders[actual_safety]          # megbízás ára
+                order_quant = safety_orders_quants[actual_safety]   # megbízás darabszáma
+                DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)    # maradék cash
+                DCA_quantity += safety_orders_quants[actual_safety]                 # várárolt eszköz mennyiség beállítása
                 averagePrice = (averagePrice + (safety_orders_quants[actual_safety] * safety_orders[actual_safety])) / DCA_quantity   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
-                TP_price = averagePrice * (1 + TP)
-                actual_safety += 1
-                print(f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
+                TP_price = averagePrice * (1 + TP)                  # TP beállítása
+                actual_safety += 1                                  # léptetés a következő safety_orderre (safety_orders tömbök következő eleme)
+                print(
+                    f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}"
+                    f"\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
             elif DCA_high < safety_orders[actual_safety]:
                 order_price = DCA_high
                 order_quant = safety_orders_quants[actual_safety]
@@ -262,19 +266,28 @@ for i in range(len(lows)):
                 averagePrice = (averagePrice + (safety_orders_quants[actual_safety] * safety_orders[actual_safety])) / DCA_quantity   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 TP_price = averagePrice * (1 + TP)
                 actual_safety += 1
-                print(f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
+                print(
+                    f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}"
+                    f"\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
 
         # STRATÉGIA ZÁRÁSA
         if j == (len(lows) - 1):
             close = closes[j]
             date = dates[j]
-            DCA_capital = sell(DCA_remain_cash, DCA_quantity, close)
-            DCA_profit = DCA_capital - initial_capital
-            DCA_profit_percent = (DCA_profit / initial_capital) * 100
-            print(f"\n-------------------------------------------------------------------------------------\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
-            BH_close_capital = sell(BH_remain_cash, BH_quantity, close)
-            BH_profit = BH_close_capital - initial_capital
-            BH_profit_percent = (BH_profit / initial_capital) * 100
-            print(f"\nBuy and hold stratégia eredménye.\nShares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f} | Close price: {close:.2f}\nCapital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...\n-------------------------------------------------------------------------------------")
+            DCA_capital = sell(DCA_remain_cash, DCA_quantity, close)    # DCA pozi zárása eladással, tőke számítása
+            DCA_profit = DCA_capital - initial_capital                  # DCA profit számítása
+            DCA_profit_percent = (DCA_profit / initial_capital) * 100   # DCA profit %
+            print(
+                f"\n-------------------------------------------------------------------------------------\nSTRATÉGIA ZÁRÁSA"
+                f"\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash:"
+                f"{DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
+            BH_close_capital = sell(BH_remain_cash, BH_quantity, close) # BH pozi zárása eladással, tőke számítása
+            BH_profit = BH_close_capital - initial_capital              # BH profit számítása
+            BH_profit_percent = (BH_profit / initial_capital) * 100     # BH profit %
+            print(
+                f"\nBuy and hold stratégia eredménye.\nShares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f} | Close price:"
+                f"{close:.2f}\nCapital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f}"
+                f" | Max. drawdown: {BH_maxdrawdown:.2f}%\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR..."
+                f"\n-------------------------------------------------------------------------------------")
 
             exit()
