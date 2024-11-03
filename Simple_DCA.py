@@ -93,7 +93,7 @@ for i in range(len(lows)):
     # DCA scope globális változóinak definiálása
     DCA_capital = capital
     DCA_quantity = 0
-    DCA_remain_cash = capital
+    DCA_remain_cash = 0.0
     DCA_highCapital = 0.0
     DCA_maxdrawdown = 0.0
     base_order = 0.0
@@ -141,9 +141,9 @@ for i in range(len(lows)):
 
                 # comission számítása
                 if base_quant * DCA_close * comission < comission_min:
-                    DCA_remain_cash -= base_quant * DCA_close - comission_min       # minimum comission alkalmazása
+                    DCA_remain_cash = capital - base_quant * DCA_close - comission_min       # minimum comission alkalmazása
                 else:
-                    DCA_remain_cash -= base_quant * DCA_close * (1 - comission)     # %-os comission alkalmazása
+                    DCA_remain_cash = capital - base_quant * DCA_close * (1 - comission)     # %-os comission alkalmazása
                 TP_price = averagePrice * (1 + TP)  # TP beállítása átlagos bekerülési ár alapján
                 print(
                     f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
