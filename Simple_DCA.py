@@ -103,7 +103,7 @@ for i in range(len(lows)):
 
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a stratégiát)
     for j in range(i, len(lows)):
-        print(f"\nDCA napja: @ {dates[j]} | nr: {j+1}")
+        print(f"\nDCA futás napja: @ {dates[j]} | nr: {j-i+1}")
 
         # scope változók értékadása
         DCA_close = closes[j]
@@ -170,7 +170,7 @@ for i in range(len(lows)):
             go = "n"
             while go != "i":
                 # print(f"BASE ORDER: {base_order}, {type(base_order)}")
-                # print("Standard input:", sys.stdin)
+                print("Standard input:", sys.stdin, flush=True)
                 go = input("Tovább? (i/n): ")
             continue # itt ignorálja a for loop további részeit és folytatja a következő nappal
 
@@ -198,7 +198,9 @@ for i in range(len(lows)):
             close = closes[j]
             date = dates[j]
             DCA_capital = DCA_quantity * close + DCA_remain_cash
-            print(f"\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f} | Capital: {DCA_capital:.2f}")
+            DCA_profit = DCA_capital - capital
+            DCA_profit_percent = (DCA_profit / capital) * 100
+            print(f"\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
             BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
             BH_profit = BH_close_capital - capital
             BH_profit_percent = (BH_profit / capital) * 100
