@@ -31,7 +31,7 @@ print(f"A vizsgált időszak: {period}\n---------------------------")
 
 
 # PARAMÉTEREK ÉRTÉKADÁSA
-capital = 10000.0               # induló tőke
+initial_capital = 10000.0               # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
 base_order_ASAP = True         # ha True, akkor azonnal fektet be, nem visszaesés után
@@ -41,7 +41,7 @@ safety_order_NR = 3             # safety orderek száma
 base_quant = 1                  # base order aránya a teljes mennyiségbőlmennyisége
 safety_quant = 2                # kezdő safety order mennyisége
 safety_quant_multiplier = 2     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
-TP = 0.1                        # Target price tizedesben megadva (0.1 = 10%)
+TP = 0.02                        # Target price tizedesben megadva (0.1 = 10%)
 
 # egyéb globális változók definiálása
 BH_quantity = 0
@@ -67,13 +67,13 @@ for i in range(len(lows)):
     if i == 0:
         BH_startclose = closes[i]
         BH_startdate = dates[i]
-        BH_quantity = capital // BH_startclose
-        BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
+        BH_quantity = initial_capital // BH_startclose
+        BH_remain_cash = initial_capital - initial_capital * comission - BH_quantity * BH_startclose
 
         # ha a jutalék miatt mínuszba futna a maradék cash, itt módosítja lefelé az eszköz darabszámot, amíg pozitív lesz a maradék
         while BH_remain_cash < 0.0:
             BH_quantity -= 1
-            BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
+            BH_remain_cash = initial_capital - initial_capital * comission - BH_quantity * BH_startclose
         print(
             f"Buy and hold stratégia kiindulási adatai.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
             f"Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}\n")
@@ -91,7 +91,7 @@ for i in range(len(lows)):
     # DCA STRATÉGIA INDÍTÁSA
     print(f"\nDCA stratégia indul @ {dates[i]} | nr: {i+1}\n")
     # DCA scope globális változóinak definiálása
-    DCA_capital = capital
+    DCA_capital = initial_capital
     DCA_quantity = 0
     DCA_remain_cash = 0.0
     DCA_highCapital = 0.0
@@ -141,9 +141,9 @@ for i in range(len(lows)):
 
                 # comission számítása
                 if base_quant * DCA_close * comission < comission_min:
-                    DCA_remain_cash = capital - base_quant * DCA_close - comission_min       # minimum comission alkalmazása
+                    DCA_remain_cash = DCA_capital - base_quant * DCA_close - comission_min       # minimum comission alkalmazása
                 else:
-                    DCA_remain_cash = capital - base_quant * DCA_close * (1 - comission)     # %-os comission alkalmazása
+                    DCA_remain_cash = DCA_capital - base_quant * DCA_close * (1 - comission)     # %-os comission alkalmazása
                 TP_price = averagePrice * (1 + TP)  # TP beállítása átlagos bekerülési ár alapján
                 print(
                     f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
@@ -167,15 +167,18 @@ for i in range(len(lows)):
 
             print(
                 f"\nSAFETY ORDERS set @ {dates[j]}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
-            go = "n"
-            while go != "i":
-                # print(f"BASE ORDER: {base_order}, {type(base_order)}")
-                print("Standard input:", sys.stdin, flush=True)
-                go = input("Tovább? (i/n): ")
+
+            # MEGSZAKÍTÁS -----------------
+            # go = "n"
+            # while go != "i":
+            #     # print(f"BASE ORDER: {base_order}, {type(base_order)}")
+            #     print("Standard input:", sys.stdin, flush=True)
+            #     go = input("Tovább? (i/n): ")
+            # MEGSZAKÍTÁS -----------------
+
             continue # itt ignorálja a for loop további részeit és folytatja a következő nappal
 
         # TP teljesülésének ellenőrzése
-        # noinspection PyRedeclaration
         DCA_closePrice = 0.0
         if TP_price > 0:
             print(f"TP ELLENŐRZÉSE\nTP: {TP_price:.2f}, High price: {DCA_high:.2f}")
@@ -198,10 +201,10 @@ for i in range(len(lows)):
             close = closes[j]
             date = dates[j]
             DCA_capital = DCA_quantity * close + DCA_remain_cash
-            DCA_profit = DCA_capital - capital
-            DCA_profit_percent = (DCA_profit / capital) * 100
+            DCA_profit = DCA_capital - initial_capital
+            DCA_profit_percent = (DCA_profit / initial_capital) * 100
             print(f"\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
             BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
-            BH_profit = BH_close_capital - capital
-            BH_profit_percent = (BH_profit / capital) * 100
+            BH_profit = BH_close_capital - initial_capital
+            BH_profit_percent = (BH_profit / initial_capital) * 100
             print(f"\nBuy and hold stratégia eredménye.\nShares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f} | Close price: {close:.2f}\nCapital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\n---------------------------\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...")
