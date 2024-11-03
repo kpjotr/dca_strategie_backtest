@@ -34,7 +34,7 @@ print(f"A vizsgált időszak: {period}\n---------------------------")
 initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = True          # ha True, akkor azonnal fektet be, nem visszaesés után
+base_order_ASAP = True         # ha True, akkor azonnal fektet be, nem visszaesés után
 initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
 drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 3             # safety orderek száma
@@ -143,7 +143,7 @@ for i in range(len(lows)):
             if base_order_ASAP:
                 DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
                 averagePrice = DCA_close    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
-                base_order = DCA_close      # base order árának beállítása
+                base_order = round(DCA_close, 2)      # base order árának beállítása
 
                 # comission számítása
                 if base_quant * DCA_close * comission < comission_min:
@@ -156,7 +156,7 @@ for i in range(len(lows)):
 
             # ASAP helyett base order számítása
             else:
-                base_order = DCA_high * (1 - initial_drop_percent)
+                base_order = round(DCA_high * (1 - initial_drop_percent), 2)
                 print(f"\nBASE ODER limit set @ {dates[j]}\nLimit price: {base_order}")
 
             # SAFETY ORDEREK SZÁMÍTÁSA
