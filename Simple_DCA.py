@@ -24,7 +24,7 @@ period = "1mo"  # Period a következő értékek valamelyike lehet ['1d', '5d', 
 company_info = yf.Ticker(ticker)
 company_name = company_info.info['longName']  # A vállalat teljes nevének lekérése
 print(f"\nA vizsgált vállalat: {company_name}")
-print(f"A vizsgált időszak: {period}---------------------------")
+print(f"A vizsgált időszak: {period}\n---------------------------")
 
 # adatok bekérése a felhasználótól
 
@@ -61,7 +61,7 @@ dates = [d.date() for d in pd.to_datetime(data.index)]  # A dátumokat az indexb
 
 # VÉGIG ITERÁL AZ ÖSSZES NAPON, MINDEN NAPON ELINDÍTJA A STRATÉGIÁT (low adatok listája adja a napok számát)
 for i in range(len(lows)):
-    print(f"Külső ciklus: {i}")
+    print(f"\nSTRATÉGIA INDUL @ {dates[i]} | nr: {i+1}\n")
     # BUY AND HOLD REFERENCIÁHOZ A PACKETT MÉRETÉNEK ÉS A MARADÉK CASH-NEK KISZÁMÍTÁSA
     if i == 0:
         BH_startclose = closes[i]
@@ -75,8 +75,8 @@ for i in range(len(lows)):
             BH_remain_cash = capital - capital * comission - BH_quantity * BH_startclose
         print(
             f"Buy and hold stratégia kiindulási adatai.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
-            f"Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}")
-        print("---------------------------")
+            f"Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}\n")
+        # print("---------------------------")
 
     # drawdown számítása buy and hold alatt
     BH_actualcapital = closes[i] * BH_quantity + BH_remain_cash
@@ -87,19 +87,8 @@ for i in range(len(lows)):
         if BH_drawdown > BH_maxdrawdown:
             BH_maxdrawdown = BH_drawdown
 
-    # BUY AND HOLD STRATÉGIA ZÁRÁSA
-    if i == (len(lows) - 1):
-        close = closes[i]
-        date = dates[i]
-        BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
-        BH_profit = BH_close_capital - capital
-        BH_profit_percent = (BH_profit / capital) * 100
-        print(
-            f"Buy and hold stratégia eredménye.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
-            f"Shares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | "
-            f"Capital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%")
-
     # DCA STRATÉGIA INDÍTÁSA
+    print(f"\nDCA stratégia indul @ {dates[i]} | nr: {i+1}\n")
     # DCA scope globális változóinak definiálása
     DCA_capital = capital
     DCA_quantity = 0
@@ -113,7 +102,7 @@ for i in range(len(lows)):
 
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a stratégiát)
     for j in range(i, len(lows)):
-        print(f"Belső ciklus: {j}")
+        print(f"DCA napja: @ {dates[j]} | nr: {j+1}\n")
 
         # scope változók értékadása
         DCA_close = closes[j]
@@ -121,7 +110,7 @@ for i in range(len(lows)):
         DCA_low = lows[j]
         averagePrice = 0.0
 
-        print(f"BASE ORDER: {base_order}, {type(base_order)}")
+        # print(f"BASE ORDER: {base_order}, {type(base_order)}")
         if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja az árát)
 
             # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
@@ -156,11 +145,12 @@ for i in range(len(lows)):
                     DCA_remain_cash -= base_quant * DCA_close * (1 - comission)     # %-os comission alkalmazása
                 TP_price = averagePrice * (1 + TP)  # TP beállítása átlagos bekerülési ár alapján
                 print(
-                    f"\nData check: Eszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+                    f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
             # ASAP helyett base order számítása
             else:
                 base_order = DCA_high * (1 - initial_drop_percent)
+                print(f"\nBASE ODER limit set @ {dates[j]}\nLimit price: {base_order}")
 
             # SAFETY ORDEREK SZÁMÍTÁSA
             lastOrder = base_order              # globális változók értékeinek átadása a scope-ba, hogy a globális ne változzon
@@ -175,7 +165,7 @@ for i in range(len(lows)):
                 safetyOrderQuant *= safety_quant_multiplier     # előző order mennyiségének módosítása
 
             print(
-                f"\nCheckpoint: Base order: {base_order:.2f}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
+                f"\nSAFETY ORDERS set @ {dates[j]}\nSafety orders: {safety_orders}\nSafety order quantities: {safety_orders_quants}")
             go = "n"
             while go != "i":
                 print(f"BASE ORDER: {base_order}, {type(base_order)}")
@@ -186,7 +176,7 @@ for i in range(len(lows)):
         # noinspection PyRedeclaration
         DCA_closePrice = 0.0
         if TP_price > 0:
-            print(f"TP: {TP_price}, High: {DCA_high}")
+            print(f"TP ELLENŐRZÉSE\nTP: {TP_price}, High: {DCA_high}")
             if TP_price < DCA_high:     # ha a napi maximum > TP, akkor bitos, hogy a TP kiütve
                 if TP_price > DCA_low:  # ha a TP a napi low és high között van, akkor a pozi záróár = TP
                     DCA_closePrice = TP_price
@@ -197,8 +187,18 @@ for i in range(len(lows)):
                 DCA_quantity = 0
                 DCA_remain_cash = 0.0
                 base_order = 0.0          # nullázza a base_order-t, hiszen már nincs pozi, kell új base order
-                print(f"---------------------------\nTP teljesült @ {DCA_closePrice:.2f} áron, {dates[j]} napon.\nA tőke összege: {DCA_capital:.2f}") # kiírja az eredményt
+                print(f"\nTP teljesült @ {DCA_closePrice:.2f} áron, {dates[j]} napon.\nA tőke összege: {DCA_capital:.2f}") # kiírja az eredményt
             pass
         pass
-    pass
-pass
+
+    # BUY AND HOLD STRATÉGIA ZÁRÁSA
+    if i == (len(lows) - 1):
+        close = closes[i]
+        date = dates[i]
+        BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
+        BH_profit = BH_close_capital - capital
+        BH_profit_percent = (BH_profit / capital) * 100
+        print(
+            f"\nBuy and hold stratégia eredménye.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
+            f"Shares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f}\nEnd:   {date} | Close price: {close:.2f} | "
+            f"Capital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\n---------------------------\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...")
