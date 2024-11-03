@@ -130,6 +130,24 @@ for i in range(len(lows)):
         DCA_low = lows[j]
         averagePrice = 0.0
 
+        # TP teljesülésének ellenőrzése
+        DCA_closePrice = 0.0
+        if TP_price > 0:
+            print(f"TP ELLENŐRZÉSE\nTP: {TP_price:.2f}, High price: {DCA_high:.2f}")
+            if TP_price < DCA_high:     # ha a napi maximum > TP, akkor bitos, hogy a TP kiütve
+                if TP_price > DCA_low:  # ha a TP a napi low és high között van, akkor a pozi záróár = TP
+                    DCA_closePrice = TP_price
+                else:                   # egyéb esetben a pozi záróár = napi minimummal (low)
+                    DCA_closePrice = DCA_low
+            if DCA_closePrice > 0:      # pozi záróárból frissíti a DCA capitalt
+                DCA_capital = sell(DCA_remain_cash, DCA_quantity, DCA_closePrice)
+                DCA_quantity = 0        # nullázz mindent, ami a base_order blokk alatt kapott új értéket és már nem kell
+                DCA_remain_cash = 0.0   # -"-
+                base_order = 0.0        # -"-
+                base_quant = 0          # -"-
+                TP_price = 0.0          # -"-
+                print(f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
+
         # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
         if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja limitre)
 
@@ -197,24 +215,6 @@ for i in range(len(lows)):
             # MEGSZAKÍTÁS -----------------
 
             continue # itt ignorálja a for loop további részeit és folytatja a következő nappal
-
-        # TP teljesülésének ellenőrzése
-        DCA_closePrice = 0.0
-        if TP_price > 0:
-            print(f"TP ELLENŐRZÉSE\nTP: {TP_price:.2f}, High price: {DCA_high:.2f}")
-            if TP_price < DCA_high:     # ha a napi maximum > TP, akkor bitos, hogy a TP kiütve
-                if TP_price > DCA_low:  # ha a TP a napi low és high között van, akkor a pozi záróár = TP
-                    DCA_closePrice = TP_price
-                else:                   # egyéb esetben a pozi záróár = napi minimummal (low)
-                    DCA_closePrice = DCA_low
-            if DCA_closePrice > 0:      # pozi záróárból frissíti a DCA capitalt
-                DCA_capital = sell(DCA_remain_cash, DCA_quantity, DCA_closePrice)
-                DCA_quantity = 0        # nullázz mindent, ami a base_order blokk alatt kapott új értéket és már nem kell
-                DCA_remain_cash = 0.0   # -"-
-                base_order = 0.0        # -"-
-                base_quant = 0          # -"-
-                TP_price = 0.0          # -"-
-                print(f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
 
         # BASE ORDER limit teljesülésének ellenőrzése
         if TP_price == 0:
