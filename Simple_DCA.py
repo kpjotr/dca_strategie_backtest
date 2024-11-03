@@ -18,7 +18,7 @@ import sys
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "mcd"
-period = "1mo"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+period = "3mo"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
@@ -41,7 +41,7 @@ safety_order_NR = 3             # safety orderek száma
 initial_base_quant = 1          # base order aránya a teljes mennyiségből
 initial_safety_quant = 2        # kezdő safety order aránya a teljes mennyiségből
 safety_quant_multiplier = 2     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
-TP = 0.02                       # Target price tizedesben megadva (0.1 = 10%)
+TP = 0.05                       # Target price tizedesben megadva (0.1 = 10%)
 
 # egyéb globális változók definiálása
 BH_quantity = 0
@@ -209,8 +209,8 @@ for i in range(len(lows)):
             DCA_capital = DCA_quantity * close + DCA_remain_cash
             DCA_profit = DCA_capital - initial_capital
             DCA_profit_percent = (DCA_profit / initial_capital) * 100
-            print(f"\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
+            print(f"\n-------------------------------------------------------------------------------------\nSTRATÉGIA ZÁRÁSA\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash: {DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
             BH_close_capital = BH_remain_cash + BH_quantity * close - BH_quantity * close * comission
             BH_profit = BH_close_capital - initial_capital
             BH_profit_percent = (BH_profit / initial_capital) * 100
-            print(f"\nBuy and hold stratégia eredménye.\nShares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f} | Close price: {close:.2f}\nCapital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\n---------------------------\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...")
+            print(f"\nBuy and hold stratégia eredménye.\nShares: {BH_quantity:.0f} | remain cash: {BH_remain_cash:.2f} | Close price: {close:.2f}\nCapital: {BH_close_capital:.2f} | Profit: {BH_profit:.2f} | Profit %: {BH_profit_percent:.2f} | Max. drawdown: {BH_maxdrawdown:.2f}%\nSTRATÉGIA ZÁRVA, KÖVETKEZŐ KÖR...\n-------------------------------------------------------------------------------------")
