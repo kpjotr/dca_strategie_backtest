@@ -198,7 +198,7 @@ for i in range(len(lows)):
                 DCA_quantity = 0
                 DCA_remain_cash = 0.0
                 base_order = 0.0          # nullázza a base_order-t, hiszen már nincs pozi, kell új base order
-                print(f"\nTP teljesült @ {DCA_closePrice:.2f} áron, {dates[j]} napon.\nA tőke összege: {DCA_capital:.2f}") # kiírja az eredményt
+                print(f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
             pass
         pass
 
