@@ -238,6 +238,7 @@ for i in range(len(lows)):
                 if DCA_high > DCA_peak:     # árcsúcs frissítése
                     DCA_peak = DCA_high
                     base_order = round(DCA_high * (1 - initial_drop_percent), 2)
+                    print(f"\nBASE ODER limit modified @ {dates[j]}\nLimit price: {base_order}")
         # STRATÉGIA ZÁRÁSA
         if j == (len(lows) - 1):
             close = closes[j]
