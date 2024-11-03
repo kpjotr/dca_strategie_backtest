@@ -51,8 +51,8 @@ print(f"A vizsgált időszak: {period}\n---------------------------")
 initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = True         # ha True, akkor azonnal fektet be, nem visszaesés után
-initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
+base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
+initial_drop_percent = 0.01     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
 drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 3             # safety orderek száma
 initial_base_quant = 1          # base order aránya a teljes mennyiségből
@@ -80,17 +80,18 @@ dates = [d.date() for d in pd.to_datetime(data.index)]  # A dátumokat az indexb
 # VÉGIG ITERÁL AZ ÖSSZES NAPON, MINDEN NAPON ELINDÍTJA A STRATÉGIÁT (low adatok listája adja a napok számát)
 for i in range(len(lows)):
     print(f"\nSTRATÉGIA INDUL @ {dates[i]} | nr: {i+1}\n")
+
     # BUY AND HOLD REFERENCIÁHOZ A PACKETT MÉRETÉNEK ÉS A MARADÉK CASH-NEK KISZÁMÍTÁSA
     if i == 0:
         BH_startclose = closes[i]
         BH_startdate = dates[i]
         BH_quantity = initial_capital // BH_startclose
-        BH_remain_cash = remaincash_calc(initial_capital, BH_quantity, BH_startclose)
+        BH_remain_cash = buy(initial_capital, BH_quantity, BH_startclose)
 
         # ha a jutalék miatt mínuszba futna a maradék cash, itt módosítja lefelé az eszköz darabszámot, amíg pozitív lesz a maradék
         while BH_remain_cash < 0.0:
             BH_quantity -= 1
-            BH_remain_cash = remaincash_calc(initial_capital, BH_quantity, BH_startclose)
+            BH_remain_cash = buy(initial_capital, BH_quantity, BH_startclose)
         print(
             f"Buy and hold stratégia kiindulási adatai.\nStart: {BH_startdate} | Close price: {BH_startclose:.2f} | "
             f"Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}\n")
@@ -129,10 +130,8 @@ for i in range(len(lows)):
         DCA_low = lows[j]
         averagePrice = 0.0
 
-        # print(f"BASE ORDER: {base_order}, {type(base_order)}")
+        # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
         if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja limitre)
-
-            # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
 
             # globális változók értékeinek átadása a scope-nak, illetve nullázása
             base_quant = initial_base_quant
@@ -182,7 +181,7 @@ for i in range(len(lows)):
             for n in range(safety_order_NR):    # for loop a safety orderek feltöltéséhez
                 safetyDrop *= drop_increment_multiplier         # safety order távolságok növelése
                 lastOrder *= (1 - safetyDrop)                   # előző order árának módosítása
-                safety_orders.append(round(lastOrder, 2))                 # safety orderek árait tartalmazó lista feltöltése
+                safety_orders.append(round(lastOrder, 2))       # safety orderek árait tartalmazó lista feltöltése
                 safety_orders_quants.append(safetyOrderQuant)   # safety orderek mennyiségeit tartalmazó lista feltöltése
                 safetyOrderQuant *= safety_quant_multiplier     # előző order mennyiségének módosítása
 
@@ -218,18 +217,21 @@ for i in range(len(lows)):
                 print(f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
 
         # BASE ORDER limit teljesülésének ellenőrzése
-        if TP_price == 0 & 0 < base_order < DCA_low:
-            if base_order < DCA_high:
+        if TP_price == 0:
+            if DCA_low < base_order < DCA_high:
                 DCA_remain_cash = buy(DCA_capital, base_quant, base_order)
                 DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
                 averagePrice = base_order    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 TP_price = averagePrice * (1 + TP)
-            else:
+                print(
+                    f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+            elif DCA_high < base_order:
                 DCA_remain_cash = buy(DCA_capital, base_quant, DCA_high)
                 DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
                 averagePrice = DCA_high    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 TP_price = averagePrice * (1 + TP)
-            print(f"\nBASE ORDER limit teljesült @ {dates[j]}\nOrder price: {averagePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}\nMaradék cash: {DCA_remain_cash:.2f}")
+                print(
+                    f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
         # STRATÉGIA ZÁRÁSA
         if j == (len(lows) - 1):
