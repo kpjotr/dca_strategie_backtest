@@ -236,9 +236,10 @@ for i in range(len(lows)):
                     f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
             else:
                 if DCA_high > DCA_peak:     # árcsúcs frissítése
+                    print(f"\nBASE ODER limit modified @ {dates[j]} | Peak: {DCA_peak} | High: {DCA_high}")
                     DCA_peak = DCA_high
                     base_order = round(DCA_high * (1 - initial_drop_percent), 2)
-                    print(f"\nBASE ODER limit modified @ {dates[j]}\nLimit price: {base_order}")
+                    print(f"Limit price: {base_order}")
         # STRATÉGIA ZÁRÁSA
         if j == (len(lows) - 1):
             close = closes[j]
