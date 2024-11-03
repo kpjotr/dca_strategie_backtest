@@ -52,7 +52,7 @@ initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
 base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
-initial_drop_percent = 0.01     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
+initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
 drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 3             # safety orderek száma
 initial_base_quant = 1          # base order aránya a teljes mennyiségből
@@ -113,6 +113,7 @@ for i in range(len(lows)):
     DCA_quantity = 0
     DCA_remain_cash = 0.0
     DCA_highCapital = 0.0
+    DCA_peak = 0.0
     DCA_maxdrawdown = 0.0
     base_order = 0.0
     base_quant = 0
@@ -157,6 +158,7 @@ for i in range(len(lows)):
             safety_orders = []
             safety_orders_quants = []
 
+            print(f"\nBASE ÉS SAFETY ORDEREK LÉTREHOZÁSA:\n")
             maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
             requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
             print(f"Close: {DCA_close:.2f} | High: {DCA_high:.2f} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
@@ -186,7 +188,7 @@ for i in range(len(lows)):
                 print(
                     f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
 
-            # ASAP helyett base order számítása
+            # ASAP helyett base order limit beállítása
             else:
                 base_order = round(DCA_high * (1 - initial_drop_percent), 2)
                 print(f"\nBASE ODER limit set @ {dates[j]}\nLimit price: {base_order}")
@@ -224,15 +226,18 @@ for i in range(len(lows)):
                 averagePrice = base_order    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 TP_price = averagePrice * (1 + TP)
                 print(
-                    f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
             elif DCA_high < base_order:
                 DCA_remain_cash = buy(DCA_capital, base_quant, DCA_high)
                 DCA_quantity = base_quant   # várárolt eszköz mennyiség beállítása
                 averagePrice = DCA_high    # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 TP_price = averagePrice * (1 + TP)
                 print(
-                    f"\nBASE ORDER FILLED @ {dates[j]}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
-
+                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+            else:
+                if DCA_high > DCA_peak:     # árcsúcs frissítése
+                    DCA_peak = DCA_high
+                    base_order = round(DCA_high * (1 - initial_drop_percent), 2)
         # STRATÉGIA ZÁRÁSA
         if j == (len(lows) - 1):
             close = closes[j]
