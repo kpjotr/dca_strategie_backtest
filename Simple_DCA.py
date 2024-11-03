@@ -31,17 +31,17 @@ print(f"A vizsgált időszak: {period}\n---------------------------")
 
 
 # PARAMÉTEREK ÉRTÉKADÁSA
-initial_capital = 10000.0               # induló tőke
+initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = True         # ha True, akkor azonnal fektet be, nem visszaesés után
+base_order_ASAP = True          # ha True, akkor azonnal fektet be, nem visszaesés után
 initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
 drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 3             # safety orderek száma
-base_quant = 1                  # base order aránya a teljes mennyiségbőlmennyisége
-safety_quant = 2                # kezdő safety order mennyisége
+initial_base_quant = 1          # base order aránya a teljes mennyiségből
+initial_safety_quant = 2        # kezdő safety order aránya a teljes mennyiségből
 safety_quant_multiplier = 2     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
-TP = 0.02                        # Target price tizedesben megadva (0.1 = 10%)
+TP = 0.02                       # Target price tizedesben megadva (0.1 = 10%)
 
 # egyéb globális változók definiálása
 BH_quantity = 0
@@ -115,6 +115,12 @@ for i in range(len(lows)):
         if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja az árát)
 
             # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
+
+            # globális változók értékeinek átadása a scope-nak, illetve nullázása
+            base_quant = initial_base_quant
+            safety_quant = initial_safety_quant
+            safety_orders = []
+            safety_orders_quants = []
 
             maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
             requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
