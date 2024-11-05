@@ -247,13 +247,14 @@ for i in range(len(lows)):
             continue # itt ignorálja a DCA loop további részeit és folytatja a következő nappal
 
         # SAFETY ORDER-ek teljesülésének ellenőrzése
-        if TP_price > 0 & actual_safety <= len(safety_orders)-1:    # akkor vizsgáljuk, ha van TP és még nem lőtte el az összes safety ordert
-            if DCA_low < safety_orders[actual_safety] < DCA_high:   # ha az aktuálisan vizsgált safety_order a Low és High értékek között van
-                order_price = safety_orders[actual_safety]          # megbízás ára
-                order_quant = safety_orders_quants[actual_safety]   # megbízás darabszáma
+        if TP_price > 0 & actual_safety <= len(safety_orders)-1:                    # akkor vizsgáljuk, ha van TP és még nem lőtte el az összes safety ordert
+            if DCA_low < safety_orders[actual_safety] < DCA_high:                   # ha az aktuálisan vizsgált safety_order a Low és High értékek között van
+                order_price = safety_orders[actual_safety]                          # megbízás ára
+                order_quant = safety_orders_quants[actual_safety]                   # megbízás darabszáma
                 DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)    # maradék cash
-                DCA_quantity += safety_orders_quants[actual_safety]                 # várárolt eszköz mennyiség beállítása
-                averagePrice = (averagePrice + (safety_orders_quants[actual_safety] * safety_orders[actual_safety])) / DCA_quantity   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                prev_quant = DCA_quantity                                           # eltárolja a korábbi mennyiséget az átlagár számításhoz
+                DCA_quantity += safety_orders_quants[actual_safety]                 # össz mennyiség frissítése a friss vásárlással
+                averagePrice = (prev_quant * averagePrice + order_quant * order_price) / DCA_quantity   # átlagos bekerülési ár beállítása
                 TP_price = averagePrice * (1 + TP)                  # TP beállítása
                 actual_safety += 1                                  # léptetés a következő safety_orderre (safety_orders tömbök következő eleme)
                 print(
@@ -264,10 +265,10 @@ for i in range(len(lows)):
                 order_quant = safety_orders_quants[actual_safety]                   # order darabszám beállítása
                 DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)    # maradék cash
                 prev_quant = DCA_quantity                                           # eltárolja a korábbi mennyiséget az átlagár számításhoz
-                DCA_quantity += safety_orders_quants[actual_safety]                 # várárolt eszköz mennyiség beállítása
-                averagePrice = (prev_quant * averagePrice + safety_orders_quants[actual_safety] * safety_orders[actual_safety]) / DCA_quantity   # átlagos bekerülési ár beállítása
-                TP_price = averagePrice * (1 + TP)
-                actual_safety += 1
+                DCA_quantity += safety_orders_quants[actual_safety]                 # össz mennyiség frissítése a friss vásárlással
+                averagePrice = (prev_quant * averagePrice + order_quant * order_price) / DCA_quantity   # átlagos bekerülési ár beállítása
+                TP_price = averagePrice * (1 + TP)                  # TP beállítása
+                actual_safety += 1                                  # léptetés a következő safety_orderre (safety_orders tömbök következő eleme)
                 print(
                     f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | open: {DCA_open:.2f} | High: {DCA_high:.2f}"
                     f"\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
