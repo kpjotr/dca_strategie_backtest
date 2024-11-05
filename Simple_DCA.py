@@ -153,7 +153,7 @@ for i in range(len(lows)):
                     f"\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
 
         # BASE ORDER limit teljesülésének ellenőrzése
-        if TP_price == 0 & base_order > 0:      # csak akkor, ha van base_order, de nincs TP
+        if TP_price == 0 and base_order > 0:      # csak akkor, ha van base_order, de nincs TP
             if DCA_low < base_order < DCA_high: # ha a base_order a Low és High értékek között van
                 DCA_remain_cash = buy(DCA_capital, base_quant, base_order)  # maradék cash
                 DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
@@ -171,7 +171,7 @@ for i in range(len(lows)):
             else:                               # ha nem teljesül a base_order...
                 if DCA_high > DCA_peak:         # megnézi, hogy kell-e igazítani fölfelé a limitet
                     base_order = 0.0            # ha kell, akkor kinullázza a base_order-t, így a következő blokkban új értéket kap a safety_orders-el együtt
-                    print(f"\nBASE ODER limit need to modify @ {dates[j]} | Peak: {DCA_peak} | High: {DCA_high}")   # árcsúcs frissítése
+                    print(f"\nBASE ODER limit need to modify @ {dates[j]} | Prev. Peak: {DCA_peak:.2f} | High: {DCA_high:.2f}")   # árcsúcs frissítése
 
         # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
         if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja limitre)
@@ -182,6 +182,7 @@ for i in range(len(lows)):
             actual_safety = 0
             safety_orders = []
             safety_orders_quants = []
+            DCA_peak = DCA_high         # be kell állítani az árfolyamcsúcsot az új base_order létrehozásakor
 
             print(f"\nBASE ÉS SAFETY ORDEREK LÉTREHOZÁSA:\n")
             maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
