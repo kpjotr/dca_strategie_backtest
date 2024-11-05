@@ -37,7 +37,7 @@ def sell(_cash, _quant, _price):
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "mcd"
-period = "3mo"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+period = "1y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
@@ -247,7 +247,7 @@ for i in range(len(lows)):
             continue # itt ignorálja a DCA loop további részeit és folytatja a következő nappal
 
         # SAFETY ORDER-ek teljesülésének ellenőrzése
-        if TP_price > 0 & actual_safety <= len(safety_orders)-1:                    # akkor vizsgáljuk, ha van TP és még nem lőtte el az összes safety ordert
+        if TP_price > 0 and actual_safety <= len(safety_orders)-1:                    # akkor vizsgáljuk, ha van TP és még nem lőtte el az összes safety ordert
             if DCA_low < safety_orders[actual_safety] < DCA_high:                   # ha az aktuálisan vizsgált safety_order a Low és High értékek között van
                 order_price = safety_orders[actual_safety]                          # megbízás ára
                 order_quant = safety_orders_quants[actual_safety]                   # megbízás darabszáma
