@@ -72,8 +72,9 @@ BH_maxdrawdown = 0.0
 data = yf.download(ticker, period=period)  # Az elmúlt {period} adatait tölti le
 
 # Low, High ÉS Date ADATOK BEOLVASÁSA LISTÁBA A LETÖLTÖTT ADATOKBÓL
-lows = data['Low'].tolist()
+opens = data['Open'].tolist()
 highs = data['High'].tolist()
+lows = data['Low'].tolist()
 closes = data['Close'].tolist()
 dates = [d.date() for d in pd.to_datetime(data.index)]  # A dátumokat az indexből kapjuk, kiolvasásuk időpont nélkül
 
@@ -127,9 +128,10 @@ for i in range(len(lows)):
         print(f"\nDCA futás napja: @ {dates[j]} | nr: {j-i+1}")
 
         # scope változók értékadása
-        DCA_close = closes[j]
+        DCA_open = opens[j]
         DCA_high = highs[j]
         DCA_low = lows[j]
+        DCA_close = closes[j]
         averagePrice = 0.0
 
         # TP teljesülésének ellenőrzése
@@ -161,9 +163,9 @@ for i in range(len(lows)):
                 TP_price = averagePrice * (1 + TP)                          # TP beállítása
                 print(f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
             elif DCA_high < base_order:         # ha a base_order a Low értéke fölé kerül (beszakadt az ár)
-                DCA_remain_cash = buy(DCA_capital, base_quant, DCA_high)    # maradék cash
+                DCA_remain_cash = buy(DCA_capital, base_quant, DCA_open)    # maradék cash
                 DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
-                averagePrice = DCA_high                                     # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                averagePrice = DCA_open                                     # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 TP_price = averagePrice * (1 + TP)                          # TP beállítása
                 print(
                     f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f}"
