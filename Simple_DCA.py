@@ -168,7 +168,7 @@ for i in range(len(lows)):
                 averagePrice = DCA_open                                     # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
                 TP_price = averagePrice * (1 + TP)                          # TP beállítása
                 print(
-                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f}"
+                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | Open: {DCA_open:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f}"
                     f"| Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
             else:                               # ha nem teljesül a base_order...
                 if DCA_high > DCA_peak:         # megnézi, hogy kell-e igazítani fölfelé a limitet
