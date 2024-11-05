@@ -37,7 +37,7 @@ def sell(_cash, _quant, _price):
 
 # A vizsgált instrumentum tickerje és a vizsgált periódus
 ticker = "mcd"
-period = "1y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+period = "5y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
 # meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
 
 # A vállalat nevének lekérdezése és kiíratása a ticker alapján
@@ -52,12 +52,12 @@ initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
 base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
-initial_drop_percent = 0.03     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
-drop_increment_multiplier = 1   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
-safety_order_NR = 3             # safety orderek száma
+initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
+drop_increment_multiplier = 1 # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
+safety_order_NR = 10             # safety orderek száma
 initial_base_quant = 1          # base order aránya a teljes mennyiségből
 initial_safety_quant = 2        # kezdő safety order aránya a teljes mennyiségből
-safety_quant_multiplier = 2     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
+safety_quant_multiplier = 1     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
 TP = 0.05                       # Target price tizedesben megadva (0.1 = 10%)
 
 # egyéb globális változók definiálása
