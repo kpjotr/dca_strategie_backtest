@@ -269,7 +269,7 @@ for i in range(len(lows)):
                 TP_price = averagePrice * (1 + TP)
                 actual_safety += 1
                 print(
-                    f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}"
+                    f"\nSAFETY ORDER #{actual_safety} FILLED @ {dates[j]} | Low {DCA_low:.2f} | open: {DCA_open:.2f} | High: {DCA_high:.2f}"
                     f"\nVétel db.: {order_quant:.0f} | Ár/db: {order_price:.2f} | Össz. db.: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | Maradék cash: {DCA_remain_cash:.2f}\Új TP: {TP_price:.2f}")
 
         # STRATÉGIA ZÁRÁSA
