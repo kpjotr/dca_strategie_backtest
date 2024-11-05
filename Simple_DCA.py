@@ -122,6 +122,7 @@ for i in range(len(lows)):
     safety_orders_quants = []
     actual_safety = 0
     TP_price = 0.0
+    averagePrice = 0.0
 
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a DCA stratégiát)
     for j in range(i, len(lows)):
@@ -132,7 +133,6 @@ for i in range(len(lows)):
         DCA_high = highs[j]
         DCA_low = lows[j]
         DCA_close = closes[j]
-        averagePrice = 0.0
 
         # TP teljesülésének ellenőrzése
         DCA_closePrice = 0.0
@@ -253,8 +253,9 @@ for i in range(len(lows)):
                 order_quant = safety_orders_quants[actual_safety]                   # megbízás darabszáma
                 DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)    # maradék cash
                 prev_quant = DCA_quantity                                           # eltárolja a korábbi mennyiséget az átlagár számításhoz
-                DCA_quantity += safety_orders_quants[actual_safety]                 # össz mennyiség frissítése a friss vásárlással
+                DCA_quantity += order_quant                                         # össz mennyiség frissítése a friss vásárlással
                 averagePrice = (prev_quant * averagePrice + order_quant * order_price) / DCA_quantity   # átlagos bekerülési ár beállítása
+                print(f"({prev_quant} * {averagePrice} + {order_quant} * {order_price}) / {DCA_quantity}")
                 TP_price = averagePrice * (1 + TP)                  # TP beállítása
                 actual_safety += 1                                  # léptetés a következő safety_orderre (safety_orders tömbök következő eleme)
                 print(
@@ -265,8 +266,9 @@ for i in range(len(lows)):
                 order_quant = safety_orders_quants[actual_safety]                   # order darabszám beállítása
                 DCA_remain_cash = buy(DCA_remain_cash, order_quant, order_price)    # maradék cash
                 prev_quant = DCA_quantity                                           # eltárolja a korábbi mennyiséget az átlagár számításhoz
-                DCA_quantity += safety_orders_quants[actual_safety]                 # össz mennyiség frissítése a friss vásárlással
+                DCA_quantity += order_quant                                         # össz mennyiség frissítése a friss vásárlással
                 averagePrice = (prev_quant * averagePrice + order_quant * order_price) / DCA_quantity   # átlagos bekerülési ár beállítása
+                print(f"({prev_quant} * {averagePrice} + {order_quant} * {order_price}) / {DCA_quantity}")
                 TP_price = averagePrice * (1 + TP)                  # TP beállítása
                 actual_safety += 1                                  # léptetés a következő safety_orderre (safety_orders tömbök következő eleme)
                 print(
