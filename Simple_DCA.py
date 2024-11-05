@@ -152,6 +152,27 @@ for i in range(len(lows)):
                     f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}"
                     f"\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
 
+        # BASE ORDER limit teljesülésének ellenőrzése
+        if TP_price == 0 & base_order > 0:      # csak akkor, ha van base_order, de nincs TP
+            if DCA_low < base_order < DCA_high: # ha a base_order a Low és High értékek között van
+                DCA_remain_cash = buy(DCA_capital, base_quant, base_order)  # maradék cash
+                DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
+                averagePrice = base_order                                   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                TP_price = averagePrice * (1 + TP)                          # TP beállítása
+                print(f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+            elif DCA_high < base_order:         # ha a base_order a Low értéke fölé kerül (beszakadt az ár)
+                DCA_remain_cash = buy(DCA_capital, base_quant, DCA_high)    # maradék cash
+                DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
+                averagePrice = DCA_high                                     # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
+                TP_price = averagePrice * (1 + TP)                          # TP beállítása
+                print(
+                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f}"
+                    f"| Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
+            else:                               # ha nem teljesül a base_order...
+                if DCA_high > DCA_peak:         # megnézi, hogy kell-e igazítani fölfelé a limitet
+                    base_order = 0.0            # ha kell, akkor kinullázza a base_order-t, így a következő blokkban új értéket kap a safety_orders-el együtt
+                    print(f"\nBASE ODER limit need to modify @ {dates[j]} | Peak: {DCA_peak} | High: {DCA_high}")   # árcsúcs frissítése
+
         # BASE ÉS SAFETY ORDEREK LÉTREHOZÁSA
         if base_order == 0.0: # ha nincs base order, akkor lép be ide (csinál base ordert ASAP vagy beállítja limitre)
 
@@ -221,29 +242,6 @@ for i in range(len(lows)):
             # MEGSZAKÍTÁS -----------------
 
             continue # itt ignorálja a DCA loop további részeit és folytatja a következő nappal
-
-        # BASE ORDER limit teljesülésének ellenőrzése
-        if TP_price == 0:
-            if DCA_low < base_order < DCA_high: # ha a base_order a Low és High értékek között van
-                DCA_remain_cash = buy(DCA_capital, base_quant, base_order)  # maradék cash
-                DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
-                averagePrice = base_order                                   # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
-                TP_price = averagePrice * (1 + TP)                          # TP beállítása
-                print(f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f} | Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
-            elif DCA_high < base_order:         # ha a base_order a Low értéke fölé kerül (beszakadt az ár)
-                DCA_remain_cash = buy(DCA_capital, base_quant, DCA_high)    # maradék cash
-                DCA_quantity = base_quant                                   # várárolt eszköz mennyiség beállítása
-                averagePrice = DCA_high                                     # átlagos bekerülési ár beállítása (base ordernél = a base order árával)
-                TP_price = averagePrice * (1 + TP)                          # TP beállítása
-                print(
-                    f"\nBASE ORDER FILLED @ {dates[j]} | Low {DCA_low:.2f} | High: {DCA_high:.2f}\nEszközök száma: {DCA_quantity:.0f}"
-                    f"| Átlagár: {averagePrice:.2f} | TP: {TP_price:.2f} | Maradék cash: {DCA_remain_cash:.2f}")
-            else:
-                if DCA_high > DCA_peak:
-                    print(f"\nBASE ODER limit modified @ {dates[j]} | Peak: {DCA_peak} | High: {DCA_high}")
-                    DCA_peak = DCA_high                                             # árcsúcs frissítése
-                    base_order = round(DCA_high * (1 - initial_drop_percent), 2)    # base order aktualizálása (emelése a csúcs szerint)
-                    print(f"Limit price: {base_order}")
 
         # SAFETY ORDER-ek teljesülésének ellenőrzése
         if TP_price > 0 & actual_safety <= len(safety_orders)-1:    # akkor vizsgáljuk, ha van TP és még nem lőtte el az összes safety ordert
