@@ -162,6 +162,7 @@ for i in range(len(lows)):
                 base_order = 0.0        # -"-
                 base_quant = 0          # -"-
                 TP_price = 0.0          # -"-
+                DCA_highCapital = 0.0   # -"-
                 print(
                     f"\nTP teljesült @ {dates[j]}\nTP price: {DCA_closePrice:.2f} | Low: {lows[j]:.2f} | High: {highs[j]:.2f}"
                     f"\nA tőke új összege: {DCA_capital:.2f}") # kiírja az eredményt
