@@ -51,12 +51,12 @@ print(f"A vizsgált időszak: {period}\n---------------------------")
 initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
+base_order_ASAP = False          # ha True, akkor azonnal fektet be, nem visszaesés után
 initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
-drop_increment_multiplier = 1 # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
+drop_increment_multiplier = 1.2 # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
 safety_order_NR = 10             # safety orderek száma
 initial_base_quant = 1          # base order aránya a teljes mennyiségből
-initial_safety_quant = 2        # kezdő safety order aránya a teljes mennyiségből
+initial_safety_quant = 1        # kezdő safety order aránya a teljes mennyiségből
 safety_quant_multiplier = 1     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
 TP = 0.05                       # Target price tizedesben megadva (0.1 = 10%)
 
@@ -98,14 +98,6 @@ for i in range(len(lows)):
             f"Shares: {BH_quantity} | remain cash: {BH_remain_cash:.2f}\n")
         # print("---------------------------")
 
-    # drawdown számítása buy and hold alatt
-    BH_actualcapital = closes[i] * BH_quantity + BH_remain_cash
-    if BH_actualcapital > BH_highCapital:
-        BH_highCapital = BH_actualcapital
-    else:
-        BH_drawdown = (BH_highCapital - BH_actualcapital) / BH_highCapital * 100
-        if BH_drawdown > BH_maxdrawdown:
-            BH_maxdrawdown = BH_drawdown
 
     # DCA STRATÉGIA INDÍTÁSA
     print(f"\nDCA stratégia indul @ {dates[i]} | nr: {i+1}\n")
@@ -127,6 +119,15 @@ for i in range(len(lows)):
     # i-EDIK NAPTÓL VÉGIG ITERÁL AZ ÖSSZES NAPON (lefuttatja a DCA stratégiát)
     for j in range(i, len(lows)):
         print(f"\nDCA futás napja: @ {dates[j]} | nr: {j-i+1}")
+
+        # BH drawdown számítása
+        BH_actualcapital = closes[j] * BH_quantity + BH_remain_cash
+        if BH_actualcapital > BH_highCapital:
+            BH_highCapital = BH_actualcapital
+        else:
+            BH_drawdown = (BH_highCapital - BH_actualcapital) / BH_highCapital * 100
+            if BH_drawdown > BH_maxdrawdown:
+                BH_maxdrawdown = BH_drawdown
 
         # scope változók értékadása
         DCA_open = opens[j]
