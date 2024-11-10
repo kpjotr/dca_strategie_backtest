@@ -129,6 +129,17 @@ for i in range(len(lows)):
             if BH_drawdown > BH_maxdrawdown:
                 BH_maxdrawdown = BH_drawdown
 
+        # DCA drawdown számítása
+        if DCA_quantity > 0:
+            DCA_actualcapital = closes[j] * DCA_quantity + DCA_remain_cash
+            if DCA_actualcapital > DCA_highCapital:
+                DCA_highCapital = DCA_actualcapital
+            else:
+                DCA_drawdown = (DCA_highCapital - DCA_actualcapital) / DCA_highCapital * 100
+                if DCA_drawdown > DCA_maxdrawdown:
+                    DCA_maxdrawdown = DCA_drawdown
+
+
         # scope változók értékadása
         DCA_open = opens[j]
         DCA_high = highs[j]
@@ -290,7 +301,7 @@ for i in range(len(lows)):
             print(
                 f"\n-------------------------------------------------------------------------------------\nSTRATÉGIA ZÁRÁSA"
                 f"\nStart: {BH_startdate} | End: {date}\n\nDCA stratégia eredménye:\nShares: {DCA_quantity:.0f} | remain cash:"
-                f"{DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: **** %")
+                f"{DCA_remain_cash:.2f}\nCapital: {DCA_capital:.2f} | Profit: {DCA_profit:.2f} | Profit %: {DCA_profit_percent:.2f} | Max. drawdown: {DCA_maxdrawdown:.2f}%")
             BH_close_capital = sell(BH_remain_cash, BH_quantity, close) # BH pozi zárása eladással, tőke számítása
             BH_profit = BH_close_capital - initial_capital              # BH profit számítása
             BH_profit_percent = (BH_profit / initial_capital) * 100     # BH profit %
