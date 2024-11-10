@@ -187,8 +187,11 @@ for i in range(len(lows)):
             DCA_peak = DCA_high         # be kell állítani az árfolyamcsúcsot az új base_order létrehozásakor
 
             print(f"\nBASE ÉS SAFETY ORDEREK LÉTREHOZÁSA:\n")
-            maxQuantity = (DCA_capital * (1 - comission)) // DCA_close  # maximum vásárolható eszköz mennyiségének kiszámítása
-            requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # stratégia működéséhez szükséges minimum eszköz darabszám számítása
+            maxQuantity = (DCA_capital * (1 - comission)) // DCA_high   # maximum vásárolható eszköz mennyiségének kiszámítása
+            if safety_quant_multiplier == 1:                            # stratégia működéséhez szükséges minimum eszköz darabszám számítása
+                requisite_quant = base_quant + (safety_quant_multiplier * safety_order_NR * safety_quant)   # ha a növekmény szorzó = 1
+            else:
+                requisite_quant = base_quant + (safety_quant_multiplier ** safety_order_NR * safety_quant)  # ha a növekmény szorzó > 1
             print(f"Close: {DCA_close:.2f} | High: {DCA_high:.2f} | Max. eszköz: {maxQuantity} | Szüks. eszköz: {requisite_quant}")
 
             # ellenőrzi, hogy tud-e elegendő eszközt venni, he nem, akkor megáll
