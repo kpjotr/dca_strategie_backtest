@@ -35,30 +35,22 @@ def sell(_cash, _quant, _price):
         new_capital = _cash + _quant * _price * (1 - comission)     # eladásból capital számítása %-os comission levonásával
     return new_capital                                              # visszatérési érték az új tőke
 
-# A vizsgált instrumentum tickerje és a vizsgált periódus
-ticker = "mcd"
-period = "5y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
-# meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
-
-# A vállalat nevének lekérdezése és kiíratása a ticker alapján
-company_info = yf.Ticker(ticker)
-company_name = company_info.info['longName']  # A vállalat teljes nevének lekérése
-print(f"\nA vizsgált vállalat: {company_name}")
-print(f"A vizsgált időszak: {period}\n---------------------------")
-
-
 # PARAMÉTEREK ÉRTÉKADÁSA
 initial_capital = 10000.0       # induló tőke
 comission_min = 1               # minimum jutalék (ha a százalékos érték nem éri el, ezzel számol)
 comission = 0.001               # jutalék tizedesben megadva (0.001 = 0.1%)
-base_order_ASAP = False          # ha True, akkor azonnal fektet be, nem visszaesés után
+base_order_ASAP = False         # ha True, akkor azonnal fektet be, nem visszaesés után
 initial_drop_percent = 0.05     # ha base_order_ASAP = False, ekkora visszaesés után vesz, tizedesben megadva (0.05 = 5%)
-drop_increment_multiplier = 1.2 # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
-safety_order_NR = 10             # safety orderek száma
+drop_increment_multiplier = 2   # visszaesések növekményének szorzója (1 = kezdővel azonos növekmény)
+safety_order_NR = 4            # safety orderek száma
 initial_base_quant = 1          # base order aránya a teljes mennyiségből
 initial_safety_quant = 1        # kezdő safety order aránya a teljes mennyiségből
 safety_quant_multiplier = 1     # safty orderek növekményének szorzója (kizárólag egész szám lehet, 1 = azonos növekmény)
-TP = 0.05                       # Target price tizedesben megadva (0.1 = 10%)
+TP = 0.03                       # Target price tizedesben megadva (0.1 = 10%)
+
+if initial_drop_percent + drop_increment_multiplier ** safety_order_NR * initial_drop_percent >= 1:
+    print("-------------------\nHIBA!\nSAFETY ORDEREK DROP-JA MEGHALADJA A 100%-OT\n-------------------")
+    exit()
 
 # egyéb globális változók definiálása
 BH_quantity = 0
@@ -68,8 +60,25 @@ BH_startclose = 0.0
 BH_highCapital = 0.0
 BH_maxdrawdown = 0.0
 
+# A vizsgált instrumentum tickerje és a vizsgált periódus
+ticker = "mcd"
+period = "10y"  # Period a következő értékek valamelyike lehet ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max']
+# meghatározott időintervallum adatainak líehívása: ticker.history(start="2015-01-01", end="2020-12-31")
+start_date = "2000-01-01"
+end_date = "2007-12-31"
+
+# A vállalat nevének lekérdezése és kiíratása a ticker alapján
+company_info = yf.Ticker(ticker)
+company_name = company_info.info['longName']  # A vállalat teljes nevének lekérése
+print(f"\nA vizsgált vállalat: {company_name}")
+
 # Adatok letöltése a Yahoo Finance-ről (OHLC, date és volume)
-data = yf.download(ticker, period=period)  # Az elmúlt {period} adatait tölti le
+if period:
+    data = yf.download(ticker, period=period)   # Az elmúlt {period} adatait tölti le
+    print(f"A vizsgált időszak: {period}\n---------------------------")
+else:
+    data = yf.download(ticker, start=start_date, end=end_date)        # Az elmúlt {interval} adatait tölti le
+    print(f"A vizsgált időszak: {start_date} - {end_date}\n---------------------------")
 
 # Low, High ÉS Date ADATOK BEOLVASÁSA LISTÁBA A LETÖLTÖTT ADATOKBÓL
 opens = data['Open'].tolist()
